@@ -1,0 +1,108 @@
+@startuml forgot password
+actor User
+actor MailServer #red
+participant ForgetPassScreen
+participant PasswordChangeScreen
+participant UserController
+participant UserService
+participant TokenHelper
+participant PasswordHelper
+participant UserRepository
+database SqlServer
+
+activate User
+    User -> ForgetPassScreen: Enter email
+    activate ForgetPassScreen
+        ForgetPassScreen -> UserController: ForgotPass(email)
+        activate UserController
+            UserController -> UserService: ForgotPassword(email)
+            activate UserService
+                UserService -> UserRepository: FindByEmail(email)
+                activate UserRepository
+                    UserRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> UserRepository: response
+                    deactivate SqlServer
+                    UserRepository --> UserService: response
+                deactivate UserRepository
+                alt Email doesn't exist 
+                    UserService --> UserController: return error code
+                else Email exist
+                    UserService -> TokenHelper: GenerateAndHashToken()
+                    activate TokenHelper
+                        TokenHelper --> UserService: response
+                    deactivate TokenHelper
+                    User -> User: ResetToken = hashedToken.Replace("=", string.Empty) 
+                    User -> User: tokenExpire  = DateTime.Now.AddHours(1)
+                    UserService -> UserRepository: UpdateAsync(user)
+                    activate UserRepository
+                        UserRepository -> SqlServer: executeUpdate(User)
+                        activate SqlServer
+                            SqlServer --> UserRepository: response
+                        deactivate SqlServer
+                        UserRepository --> UserService: response
+                    deactivate UserRepository
+                    alt Update failed
+                        UserService --> UserController: return error code
+                    else Update successfully
+                        UserService --> UserController: response
+                    end
+                end
+            deactivate UserService
+            UserController --> ForgetPassScreen: response
+            activate MailServer
+                UserController --> MailServer: Invoke send mail
+        deactivate UserController
+    deactivate ForgetPassScreen
+        User -> MailServer: Click on reset password link
+        MailServer -> PasswordChangeScreen: send token
+        deactivate MailServer
+        activate PasswordChangeScreen
+            PasswordChangeScreen -> UserController: ChangeNewPass(ChangeNewPassRequest)
+            activate UserController
+                UserController -> UserService: ChangeNewPass(ChangeNewPassRequest)
+                activate UserService
+                alt ChangeNewPassRequest null
+                    UserService --> UserController : return error code
+                else
+                    UserService -> UserRepository: FindByResetToken(request.Token)
+                    activate UserRepository
+                        UserRepository -> SqlServer: executeQuery()
+                        activate SqlServer
+                            SqlServer --> UserRepository: response
+                        deactivate SqlServer
+                        UserRepository --> UserService: response
+                    deactivate UserRepository
+                    alt token doesn't exist
+                        UserService --> UserController : return error code
+                    else token expired
+                        UserService --> UserController : return error code
+                    else password doesn't match repassword
+                        UserService --> UserController : return error code
+                    else 
+                        UserService -> PasswordHelper: HashUsingPbkdf2(Password, PasswordSalt)
+                        activate PasswordHelper
+                            PasswordHelper --> UserService: response
+                        deactivate PasswordHelper
+                        User -> User : user.Password = newPasswordHash
+                        activate UserRepository
+                            UserRepository -> SqlServer: executeUpdate(User)
+                            activate SqlServer
+                                SqlServer --> UserRepository: response
+                            deactivate SqlServer
+                        UserRepository --> UserService: response
+                        deactivate UserRepository
+                    end
+                    alt Update failed
+                        UserService --> UserController: return error code
+                    else Update successfully
+                        UserService --> UserController: response
+                    end
+                end
+                deactivate UserService
+                UserController --> PasswordChangeScreen: response
+            deactivate UserController
+            PasswordChangeScreen --> User: display message
+        deactivate PasswordChangeScreen
+deactivate User
+@enduml
