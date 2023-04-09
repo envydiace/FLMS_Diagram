@@ -52,14 +52,14 @@ activate User
                         alt create success
                             UserService --> UserController: return success code
                         else create fail 
-                        UserService --> UserController: return error code
+                            UserService --> UserController: return error code
                         end
                     end
                 end
             deactivate UserService
             UserController --> SignupScreen: response
         deactivate UserController
-        SignupScreen --> User: response
+        SignupScreen --> User: display message
     deactivate SignupScreen
 deactivate User
 @enduml
