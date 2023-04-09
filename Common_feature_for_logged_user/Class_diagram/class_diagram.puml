@@ -1,2 +1,27 @@
-@startuml classDiagram
+@startuml class diagram
+class User {
+  +UserId: int
+  +Email: varchar
+  +Password: varchar
+  +PasswordSalt: varchar
+  +FullName: varchar
+  +Phone: varchar
+  +Address: varchar
+  +Active: bit
+  +CreateAt: datetime
+  +Role: nvarchar
+  +Avatar: nvarchar
+  +ResetToken: varchar
+  +TokenExpire: datetime
+  +login(email: String, password: String): boolean
+  +logout()
+}
+
+class AuthenticationSystem {
+  +verifyCredentials(email: String, password: String): boolean
+  +generateToken(userId: int): String
+  +validateToken(token: String): boolean
+}
+
+User --> AuthenticationSystem: login()
 @enduml

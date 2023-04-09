@@ -43,7 +43,7 @@ activate User
             deactivate UserService
             UserController --> LoginScreen: response
         deactivate UserController
-        LoginScreen --> User: response
+        LoginScreen --> User: display message
     deactivate LoginScreen
 deactivate User
 @enduml

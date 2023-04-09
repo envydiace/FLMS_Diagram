@@ -1,0 +1,81 @@
+@startuml Login
+actor User
+participant CreateLeagueScreen
+participant LeagueController
+participant LeagueService
+participant MethodUtils
+participant LeagueRepository
+database SqlServer
+
+activate User
+    User -> CreateLeagueScreen: Input new league information
+    activate CreateLeagueScreen
+        CreateLeagueScreen -> LeagueController: CreateLeague(CreateLeagueRequest)
+        activate LeagueController
+            LeagueController -> LeagueService: CreateLeague(CreateLeagueRequest)
+            activate LeagueService
+                LeagueService -> MethodUtils: CheckLeagueType(LeagueType)
+                activate MethodUtils
+                    MethodUtils --> LeagueService: response
+                deactivate MethodUtils
+                LeagueService -> MethodUtils: CountNumberOfRound(LeagueType, NoParticipate)
+                activate MethodUtils
+                    MethodUtils --> LeagueService: response
+                deactivate MethodUtils
+                LeagueService -> LeagueRepository: FindByName(LeagueName)
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> LeagueRepository: response
+                    deactivate SqlServer
+                    LeagueRepository --> LeagueService: response
+                deactivate LeagueRepository
+                LeagueService -> MethodUtils: GetLeagueTypeByName(LeagueType)
+                activate MethodUtils
+                    MethodUtils --> LeagueService: response
+                deactivate MethodUtils
+                alt League type equals "KO"
+                    LeagueService -> MethodUtils: GetKoList(NoParticipate)
+                    activate MethodUtils
+                        MethodUtils --> LeagueService: response
+                    deactivate MethodUtils
+                    LeagueService -> MethodUtils: GetLeagueKoRound(Deep)
+                    activate MethodUtils
+                        MethodUtils --> LeagueService: response
+                    deactivate MethodUtils
+                    LeagueService -> MethodUtils: GenerateMatchSquad(NoPlayerSquad, MaxNoPlayer)
+                    activate MethodUtils
+                        MethodUtils --> LeagueService: response
+                    deactivate MethodUtils
+                else League type equals "LEAGUE"
+                    LeagueService -> MethodUtils: GetListMatches(ListParticipates)
+                    activate MethodUtils
+                        MethodUtils --> LeagueService: response
+                    deactivate MethodUtils
+                    LeagueService -> MethodUtils: GenerateMatchSquad(NoPlayerSquad, MaxNoPlayer)
+                    activate MethodUtils
+                        MethodUtils --> LeagueService: response
+                    deactivate MethodUtils
+                else League type doesn't exist
+                    LeagueService --> LeagueController: return error message
+                end
+                LeagueService -> LeagueRepository: CreateAsync(League)
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer: executeUpdate()
+                    activate SqlServer
+                        SqlServer --> LeagueRepository: response
+                    deactivate SqlServer
+                    LeagueRepository --> LeagueService: response
+                deactivate LeagueRepository
+                alt Create success
+                    LeagueService --> LeagueController: return success code 
+                else Create fail 
+                    LeagueService --> LeagueController: return error code
+                end 
+            deactivate LeagueService
+            LeagueController --> CreateLeagueScreen: response
+        deactivate LeagueController
+        CreateLeagueScreen --> User: Display message
+    deactivate CreateLeagueScreen
+deactivate User
+@enduml
