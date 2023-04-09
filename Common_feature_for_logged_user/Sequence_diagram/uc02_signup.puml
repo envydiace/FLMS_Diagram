@@ -1,2 +1,65 @@
-@startuml sequence
+@startuml Sign Up
+actor User
+participant SignupScreen
+participant UserController
+participant UserService
+participant UserRepository
+participant MethodUtils
+participant PasswordHelper
+database SqlServer
+
+activate User
+    User -> SignupScreen: Input Sign Up information
+    activate SignupScreen
+        SignupScreen -> UserController: Signup(SignupRequest)
+        activate UserController
+            UserController -> UserService: CheckSignUp(SignupRequest)
+            activate UserService
+                UserService -> UserRepository: FindByEmail(Email)
+                activate UserRepository
+                    UserRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> UserRepository: response
+                    deactivate SqlServer
+                    UserRepository --> UserService: response
+                deactivate UserRepository
+                alt email existed
+                    UserService --> UserController: return error code
+                else email doesn't exist
+                    UserService -> MethodUtils: CheckUserRole(Role)
+                    activate MethodUtils
+                        MethodUtils --> UserService: response 
+                    deactivate MethodUtils
+                    alt invalid role
+                        UserService --> UserController: return error code
+                    else valid role
+                        UserService -> PasswordHelper: GetSecureSalt()
+                        activate PasswordHelper
+                            PasswordHelper --> UserService: response
+                        deactivate PasswordHelper
+                        UserService -> PasswordHelper: HashUsingPbkdf2(Password, Salt)
+                        activate PasswordHelper
+                            PasswordHelper --> UserService: response
+                        deactivate PasswordHelper
+                        UserService -> UserRepository: CreateAsync(User)
+                        activate UserRepository
+                            UserRepository -> SqlServer: executeUpdate()
+                            activate SqlServer
+                                SqlServer --> UserRepository: response
+                            deactivate SqlServer
+                            UserRepository --> UserService: response
+                        deactivate UserRepository
+                        alt create success
+                            UserService --> UserController: return success code
+                        else create fail 
+                        UserService --> UserController: return error code
+                        end
+                    end
+                end
+            deactivate UserService
+            UserController --> SignupScreen: response
+        deactivate UserController
+        SignupScreen --> User: response
+    deactivate SignupScreen
+deactivate User
 @enduml
