@@ -1,36 +1,49 @@
 @startuml Login
 actor User
+participant LoginScreen
 participant UserController
 participant UserService
 participant UserRepository
-participant AuthenticationSystem
+participant PasswordHelper
+participant TokenService
 database SqlServer
 
 activate User
-User -> UserController: login(email, password)
-activate UserController
-UserController -> UserService: login(email, password)
-activate UserService
-UserService -> UserRepository: findByemail(email)
-activate UserRepository
-UserRepository -> SqlServer: SELECT * FROM User WHERE Email = email
-activate SqlServer
-SqlServer --> UserRepository: user
-deactivate SqlServer
-UserRepository --> UserService: user
-deactivate UserRepository
-UserService -> AuthenticationSystem: verifyCredentials(email, password)
-activate AuthenticationSystem
-AuthenticationSystem -> SqlServer: SELECT Password, PasswordSalt FROM User WHERE Email = email
-activate SqlServer
-SqlServer --> AuthenticationSystem: result
-deactivate SqlServer
-AuthenticationSystem --> UserService: result
-deactivate AuthenticationSystem
-UserService -> UserController: result
-deactivate UserService
-UserController -> User: result
-deactivate UserController
-User --> UserController: result
+    User -> LoginScreen: Input Login information
+    activate LoginScreen
+        LoginScreen -> UserController: Login(LoginRequest)
+        activate UserController
+            UserController -> UserService: LoginAsync(LoginRequest)
+            activate UserService
+                UserService -> UserRepository: FindByEmail(Email)
+                activate UserRepository
+                    UserRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> UserRepository: response
+                    deactivate SqlServer
+                    UserRepository --> UserService: response
+                deactivate UserRepository
+                alt Email doesn't exist 
+                    UserService --> UserController: return error code
+                else Email exist
+                    UserService -> PasswordHelper: HashUsingPbkdf2(Password, PasswordSalt)
+                    activate PasswordHelper
+                        PasswordHelper --> UserService: response
+                    deactivate PasswordHelper
+                    alt Password and passwordHash doesn't match 
+                        UserService --> UserController: return error code
+                    else Password and passwordHash matched
+                        UserService -> TokenService: GenerateTokensAsync(UserId)
+                        activate TokenService
+                            TokenService --> UserService: response
+                        deactivate TokenService
+                        UserService --> UserController: return success code
+                    end
+                end
+            deactivate UserService
+            UserController --> LoginScreen: response
+        deactivate UserController
+        LoginScreen --> User: response
+    deactivate LoginScreen
 deactivate User
 @enduml
