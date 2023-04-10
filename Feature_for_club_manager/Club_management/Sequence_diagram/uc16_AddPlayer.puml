@@ -1,0 +1,77 @@
+@startuml Add Player
+actor ClubManager #AquaMarine
+participant AddPlayerScreen
+participant PlayerController
+participant PlayerService
+participant PlayerRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> AddPlayerScreen: Enter player information
+    activate AddPlayerScreen
+        AddPlayerScreen -> PlayerController: CreatePlayer(request)
+        activate PlayerController
+            PlayerController -> PlayerService: CreatePlayer(request, UserId)
+            activate PlayerService
+                PlayerService -> PlayerRepository: FindByClubId()
+                activate PlayerRepository
+                    PlayerRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> PlayerRepository: response
+                    deactivate SqlServer
+                    PlayerRepository --> PlayerService: response
+                deactivate PlayerRepository
+                alt Club not existed
+                    PlayerService --> PlayerController : return error code
+                else Club does not belong to User
+                    PlayerService --> PlayerController : return error code
+                else 
+                    PlayerService -> PlayerRepository: GetPlayerByNickName(request.NickName)
+                    activate PlayerRepository
+                        PlayerRepository -> SqlServer: executeQuery()
+                        activate SqlServer
+                            SqlServer --> PlayerRepository: response
+                        deactivate SqlServer
+                    PlayerRepository --> PlayerService: response
+                    deactivate PlayerRepository
+                    alt Player existed
+                        alt Player was already added to Club in request
+                            PlayerService --> PlayerController : return error code
+                        else
+                            PlayerService -> PlayerRepository: CreateAsync(playerclub)
+                            activate PlayerRepository
+                                PlayerRepository -> SqlServer: executeUpdate()
+                                activate SqlServer
+                                    SqlServer --> PlayerRepository: response
+                                deactivate SqlServer
+                            PlayerRepository --> PlayerService: response
+                            deactivate PlayerRepository
+                            alt create player success
+                                PlayerService --> PlayerController : return success code
+                            else create player failed
+                                PlayerService --> PlayerController : return error code
+                            end
+                        end
+                    else Create new player
+                        PlayerService -> PlayerRepository: CreateAsync(player)
+                        activate PlayerRepository
+                            PlayerRepository -> SqlServer: executeUpdate()
+                            activate SqlServer
+                                SqlServer --> PlayerRepository: response
+                            deactivate SqlServer
+                        PlayerRepository --> PlayerService: response
+                        deactivate PlayerRepository
+                        alt create player success
+                            PlayerService --> PlayerController : return success code
+                        else create player failed
+                            PlayerService --> PlayerController : return error code
+                        end
+                    end
+                end
+            deactivate PlayerService
+            PlayerController --> AddPlayerScreen: return message code
+        deactivate PlayerController
+        AddPlayerScreen --> ClubManager: return message
+    deactivate AddPlayerScreen
+deactivate ClubManager
+@enduml
