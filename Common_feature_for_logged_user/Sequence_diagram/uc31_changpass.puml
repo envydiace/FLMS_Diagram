@@ -1,0 +1,69 @@
+@startuml Change Password
+actor User
+participant ChangePassScreen
+participant UserController
+participant UserService
+participant UserRepository
+participant PasswordHelper
+database SqlServer
+
+activate User
+    User -> ChangePassScreen: input data
+    activate ChangePassScreen
+        ChangePassScreen -> UserController: ChangePassword(ChangePasswordRequest)
+        activate UserController
+            UserController -> UserService: ChangePass(request, UserId)
+            activate UserService
+                alt request don't have data
+                    UserService --> UserController: return error code
+                else request have data
+                    UserService -> UserRepository: FindByUserId()
+                    activate UserRepository
+                        UserRepository -> SqlServer: executeQuery()
+                        activate SqlServer
+                            SqlServer --> UserRepository: response
+                        deactivate SqlServer
+                        UserRepository --> UserService: response
+                    deactivate UserRepository
+                    alt User existed
+                        UserService -> PasswordHelper: HashUsingPbkdf2(request.OldPassword, salt)
+                        activate PasswordHelper
+                            PasswordHelper --> UserService: oldPasswordHash
+                        deactivate PasswordHelper
+                        alt If user password doesn't match with oldPasswordHash
+                            UserService --> UserController: return error code
+                        else New password length < 6
+                            UserService --> UserController: return error code
+                        else New password doesn't match with repassword
+                            UserService --> UserController: return error code
+                        else all valid
+                            UserService -> PasswordHelper: HashUsingPbkdf2(request.NewPassword, salt)
+                            activate PasswordHelper
+                                PasswordHelper --> UserService: newPasswordHash
+                            deactivate PasswordHelper
+                            User -> User: user.Password = newPasswordHash
+                            UserService -> UserRepository: UpdateAsync(user)
+                            activate UserRepository
+                                UserRepository -> SqlServer: executeUpdate(user)
+                                activate SqlServer
+                                    SqlServer --> UserRepository: response
+                                deactivate SqlServer
+                                UserRepository --> UserService: response
+                            deactivate UserRepository
+                            alt Update success
+                                UserService --> UserController: return success code
+                            else Update fail
+                                UserService --> UserController: return error code
+                            end
+                        end
+                    else User not exist
+                        UserService --> UserController: return error code
+                    end
+                end
+            deactivate UserService
+            UserController --> ChangePassScreen: return message
+        deactivate UserController
+        ChangePassScreen --> User: return message
+    deactivate ChangePassScreen
+deactivate User
+@enduml
