@@ -1,0 +1,53 @@
+@startuml Add Player
+actor ClubManager #AquaMarine
+participant UpdatePlayerScreen
+participant PlayerController
+participant PlayerService
+participant PlayerRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> UpdatePlayerScreen: Edit player information
+    activate UpdatePlayerScreen
+        UpdatePlayerScreen -> PlayerController: UpdatePlayer(UpdatePlayerRequest)
+        activate PlayerController
+            PlayerController -> PlayerService :  UpdatePlayer(request, UserID)
+            activate PlayerService
+                PlayerService -> PlayerRepository: FindByPlayerId()
+                activate PlayerRepository
+                    PlayerRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> PlayerRepository: response
+                    deactivate SqlServer
+                    PlayerRepository --> PlayerService: response
+                deactivate PlayerRepository
+                alt Player not existed
+                    PlayerService --> PlayerController: return error code
+                else Player existed
+                    alt Player not belong to club in request
+                        PlayerService --> PlayerController: return error code
+                    else Club not belong to user
+                        PlayerService --> PlayerController: return error code
+                    else state valid
+                        PlayerService -> PlayerRepository: UpdateAsync(player)
+                        activate PlayerRepository
+                            PlayerRepository -> SqlServer: executeUpdate()
+                            activate SqlServer
+                                SqlServer --> PlayerRepository: response
+                            deactivate SqlServer
+                            PlayerRepository --> PlayerService: response
+                        deactivate PlayerRepository
+                        alt Update success 
+                            PlayerService --> PlayerController: return success code
+                        else Update failed
+                            PlayerService --> PlayerController: return error code
+                        end
+                    end
+                end
+            deactivate PlayerService
+            PlayerController --> UpdatePlayerScreen: return message
+        deactivate PlayerController
+        UpdatePlayerScreen --> ClubManager: return message
+    deactivate UpdatePlayerScreen
+deactivate ClubManager
+@enduml
