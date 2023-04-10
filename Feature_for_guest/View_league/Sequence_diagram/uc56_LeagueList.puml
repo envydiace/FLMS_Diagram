@@ -1,2 +1,32 @@
-@startuml sequence
+@startuml LeagueList
+actor User 
+participant LeagueListScreen
+participant LeagueController
+participant LeagueService
+participant LeagueRepository
+database SqlServer
+
+activate User
+    User -> LeagueListScreen: input filter to search list leagues
+    activate LeagueListScreen
+        LeagueListScreen -> LeagueController: GetListLeagueFilters(ListLeagueFilterRequest)
+        activate LeagueController
+            LeagueController -> LeagueService: GetListLeagueFilters(ListLeagueFilterRequest)
+            activate LeagueService
+                LeagueService -> LeagueRepository: FindByNameAndDate(SearchName, SearchDate)
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> LeagueRepository: response
+                    deactivate SqlServer
+                    LeagueRepository --> LeagueService: list league by filter
+                deactivate LeagueRepository
+                LeagueService --> LeagueController: list league by filter paging
+            deactivate LeagueService
+            LeagueController --> LeagueListScreen: list league response
+        deactivate LeagueController
+        LeagueListScreen --> User: view list league
+    deactivate LeagueListScreen
+deactivate User
+
 @enduml
