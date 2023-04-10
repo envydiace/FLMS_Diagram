@@ -1,0 +1,35 @@
+@startuml View Profile Detail
+    actor User
+    participant ProfileScreen
+    participant UserController
+    participant UserService
+    participant UserRepository
+    database SqlServer
+
+activate User
+    User -> ProfileScreen: login
+    activate ProfileScreen
+        ProfileScreen -> UserController: GetUserProfile()
+        activate UserController
+            UserController -> UserService: GetUserProfile(UserId)
+            activate UserService
+                UserService -> UserRepository: FindByUserId()
+                activate UserRepository
+                    UserRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> UserRepository : response
+                    deactivate SqlServer
+                    UserRepository --> UserService: response
+                deactivate UserRepository
+                alt User not existed
+                    UserService --> UserController : return error code
+                else User existed
+                    UserService --> UserController: response
+                end
+            deactivate  UserService
+            UserController --> ProfileScreen: response
+        deactivate UserController
+        ProfileScreen --> User: data
+    deactivate ProfileScreen
+deactivate User
+@enduml
