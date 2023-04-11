@@ -1,0 +1,48 @@
+@startuml Edit profile
+actor User
+participant EditProfileScreen
+participant UserController
+participant UserService
+participant UserRepository
+database SqlServer
+
+activate User
+    User -> EditProfileScreen: Input data
+    activate EditProfileScreen
+        EditProfileScreen -> UserController: EditProfile(EditProfileRequest)
+        activate UserController
+            UserController -> UserService: EditProfile(request, UserID)
+            activate UserService
+                UserService -> UserRepository: FindByUserId()
+                activate UserRepository
+                    UserRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> UserRepository: response
+                    deactivate SqlServer
+                    UserRepository --> UserService: response
+                deactivate UserRepository
+                alt User not exist
+                    UserService --> UserController: return error code
+                else User existed
+                    User -> User: replace data from request
+                    UserService -> UserRepository: UpdateAsync(user)
+                    activate UserRepository
+                        UserRepository -> SqlServer: executeUpdate(user)
+                        activate SqlServer
+                            SqlServer --> UserRepository: response
+                        deactivate SqlServer
+                        UserRepository --> UserService: response
+                    deactivate UserRepository
+                    alt Update success
+                        UserService --> UserController: return success code
+                    else Update failed
+                        UserService --> UserController: return error code
+                    end
+                end
+            deactivate UserService
+            UserController --> EditProfileScreen: return message
+        deactivate UserController
+        EditProfileScreen --> User: return message
+    deactivate EditProfileScreen 
+deactivate User
+@enduml
