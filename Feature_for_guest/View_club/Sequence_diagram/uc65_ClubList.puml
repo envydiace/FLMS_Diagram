@@ -1,2 +1,31 @@
-@startuml sequence
+@startuml ClubList(Guest)
+actor User
+participant ClubListScreen
+participant ClubController
+participant ClubService
+participant ClubRepository
+database SqlServer
+
+activate User
+    User -> ClubListScreen: Input name to search club
+    activate ClubListScreen
+        ClubListScreen -> ClubController: GetListClubFilter(ListClubFilterRequest)
+        activate ClubController
+            ClubController -> ClubService: GetListClubFilter(request)
+            activate ClubService
+                ClubService -> ClubRepository: FindByCondition(ClubName/ClubManagerName)
+                activate ClubRepository
+                    ClubRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ClubRepository : response
+                    deactivate SqlServer
+                    ClubRepository --> ClubService: response
+                deactivate ClubRepository
+                ClubService --> ClubController: response
+            deactivate ClubService
+            ClubController --> ClubListScreen: response
+        deactivate ClubController
+        ClubListScreen --> User: data
+    deactivate ClubListScreen
+deactivate User 
 @enduml
