@@ -1,0 +1,31 @@
+@startuml View League Schedule (Guest)
+actor User
+participant MatchStatsScreen
+participant MatchStatisticController
+participant MatchStatisticService
+participant MatchStatisticRepository
+database SqlServer
+
+activate User
+    User -> MatchStatsScreen: Click on tab statistic
+    activate MatchStatsScreen
+        MatchStatsScreen -> MatchStatisticController: GetMatchStat(matchId)
+        activate MatchStatisticController
+            MatchStatisticController -> MatchStatisticService: GetMatchStatistic(matchId)
+            activate MatchStatisticService
+                MatchStatisticService -> MatchStatisticRepository: FindByMatchId()
+                activate MatchStatisticRepository
+                    MatchStatisticRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> MatchStatisticRepository : response
+                    deactivate SqlServer
+                    MatchStatisticRepository --> MatchStatisticService: response
+                deactivate MatchStatisticRepository
+                    MatchStatisticService --> MatchStatisticController: response
+            deactivate MatchStatisticService
+            MatchStatisticController --> MatchStatsScreen: response
+        deactivate MatchStatisticController
+        MatchStatsScreen --> User: data
+    deactivate MatchStatsScreen
+deactivate User 
+@enduml
