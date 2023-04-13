@@ -1,0 +1,42 @@
+@startuml View Club Schedule (Guest)
+actor User
+participant ClubScheduleScreen
+participant MatchController
+participant MatchService
+participant MatchRepository
+participant ParticipantNodeRepository
+database SqlServer
+
+activate User
+    User -> ClubScheduleScreen: Click on tab club schedule
+    activate ClubScheduleScreen
+        ClubScheduleScreen -> MatchController: GetClubSchedule(clubId)
+        activate MatchController
+            MatchController -> MatchService: GetClubSchedule(clubId)
+            activate MatchService
+                MatchService -> ParticipantNodeRepository: FindByClubId()
+                activate ParticipantNodeRepository
+                    ParticipantNodeRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ParticipantNodeRepository : response
+                    deactivate SqlServer
+                    ParticipantNodeRepository --> MatchService: response
+                deactivate ParticipantNodeRepository
+                loop for each participant node in list 
+                    MatchService -> MatchRepository: FindByParticipantNodeId()
+                    activate MatchRepository
+                    MatchRepository -> SqlServer: executeQuery()
+                        activate SqlServer
+                            SqlServer --> MatchRepository : response
+                        deactivate SqlServer
+                    MatchRepository --> MatchService: response
+                    deactivate MatchRepository
+                end
+                MatchService --> MatchController: response
+            deactivate MatchService
+            MatchController --> ClubScheduleScreen: response
+        deactivate MatchController
+        ClubScheduleScreen --> User: data
+    deactivate ClubScheduleScreen
+deactivate User 
+@enduml
