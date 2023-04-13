@@ -1,0 +1,37 @@
+@startuml View Player Information (Guest)
+actor ClubManager #Aquamarine
+participant PlayerInfoScreen
+participant PlayerController
+participant PlayerService
+participant PlayerRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> PlayerInfoScreen: Click on a player
+    activate PlayerInfoScreen
+        PlayerInfoScreen -> PlayerController: GetPlayerByClubManager(GetPlayerByClubManagerRequest)
+        activate PlayerController
+            PlayerController -> PlayerService: GetPlayerByClubManager(request, UserID)
+            activate PlayerService
+                PlayerService -> PlayerRepository: FindByPlayerId()
+                activate PlayerRepository
+                    PlayerRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> PlayerRepository: response
+                    deactivate SqlServer
+                    PlayerRepository --> PlayerService: response
+                deactivate PlayerRepository
+                alt Player not existed
+                    PlayerService --> PlayerController: return error code
+                else Club that has this player not belong to user 
+                    PlayerService --> PlayerController: return error code
+                else Player exist 
+                    PlayerService --> PlayerController: response
+                end
+            deactivate PlayerService
+            PlayerController ---> PlayerInfoScreen: response
+        deactivate PlayerController
+        PlayerInfoScreen --> ClubManager: data
+    deactivate PlayerInfoScreen
+deactivate ClubManager
+@enduml
