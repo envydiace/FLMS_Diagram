@@ -1,19 +1,19 @@
-@startuml Create CLub
+@startuml Update Club
 actor ClubManager #Aquamarine
-participant CreateClubScreen
+participant UpdateClubScreen
 participant ClubController
 participant ClubService
 participant ClubRepository
 database SqlServer
 
 activate ClubManager
-    ClubManager -> CreateClubScreen: input data
-    activate CreateClubScreen
-        CreateClubScreen -> ClubController: CreateClub(CreateClubRequest)
+    ClubManager -> UpdateClubScreen: input data
+    activate UpdateClubScreen
+        UpdateClubScreen -> ClubController: UpdateClub(UpdateClubRequest)
         activate ClubController
-            ClubController -> ClubService: CreateClub(request, UserID)
+            ClubController -> ClubService: UpdateClub(request)
             activate ClubService
-                ClubService -> ClubRepository: FindByClubName()
+                ClubService -> ClubRepository: FindByClubId()
                 activate ClubRepository
                     ClubRepository -> SqlServer: executeQuery()
                     activate SqlServer
@@ -21,10 +21,10 @@ activate ClubManager
                     deactivate SqlServer
                     ClubRepository -> ClubService: response
                 deactivate ClubRepository
-                alt Club existed 
+                alt Club not existed 
                     ClubService --> ClubController: return error code
-                else Club not existed
-                    ClubService -> ClubRepository:  CreateAsync(club)
+                else Club existed
+                    ClubService -> ClubRepository:  UpdateAsync(club)
                     activate ClubRepository
                         ClubRepository -> SqlServer: executeUpdate(club)
                         activate SqlServer
@@ -32,16 +32,16 @@ activate ClubManager
                         deactivate SqlServer
                         ClubRepository -> ClubService: response
                     deactivate ClubRepository
-                    alt Create success 
+                    alt Update success 
                         ClubService --> ClubController: return success code
-                    else Create failed
+                    else Update failed
                         ClubService --> ClubController: return error code
                     end 
                 end
             deactivate ClubService
-            ClubController --> CreateClubScreen: response
+            ClubController --> UpdateClubScreen: response
         deactivate ClubController
-        CreateClubScreen --> ClubManager: return response
-    deactivate CreateClubScreen
+        UpdateClubScreen --> ClubManager: return message
+    deactivate UpdateClubScreen
 deactivate ClubManager
 @enduml
