@@ -1,0 +1,31 @@
+@startuml ViewPlayerList(Guest)
+actor User
+participant PlayerListScreen
+participant PlayerController
+participant PlayerService
+participant PlayerRepository
+database SqlServer
+
+activate User
+    User -> PlayerListScreen: Input name to search player
+    activate PlayerListScreen
+        PlayerListScreen -> PlayerController: GetListPlayerFilter(ListPlayerFilterRequest)
+        activate PlayerController
+            PlayerController -> PlayerService: GetListPlayerFilter(request)
+            activate PlayerService
+                PlayerService -> PlayerRepository: FindByCondition(PlayerName/NickName)
+                activate PlayerRepository
+                    PlayerRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> PlayerRepository : response
+                    deactivate SqlServer
+                    PlayerRepository --> PlayerService: response
+                deactivate PlayerRepository
+                PlayerService --> PlayerController: response
+            deactivate PlayerService
+            PlayerController --> PlayerListScreen: response
+        deactivate PlayerController
+        PlayerListScreen --> User: data
+    deactivate PlayerListScreen
+deactivate User 
+@enduml
