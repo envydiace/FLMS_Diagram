@@ -1,0 +1,35 @@
+@startuml View Expense and Price detail (Guest)
+actor User
+participant FeeDetailScreen
+participant FeeController
+participant FeeService
+participant FeeRepository
+database SqlServer
+
+activate User
+    User -> FeeDetailScreen: view list fee
+    activate FeeDetailScreen
+        FeeDetailScreen -> FeeController: GetLeagueFees(LeagueId)
+        activate FeeController
+            FeeController -> FeeService: GetListLeagueFee(LeagueId)
+            activate FeeService
+                FeeService -> FeeRepository: FindByLeagueId()
+                activate FeeRepository
+                    FeeRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> FeeRepository: response
+                    deactivate SqlServer
+                    FeeRepository --> FeeService: response
+                deactivate FeeRepository
+                alt List fee not existed
+                    FeeService --> FeeController: return error code
+                else List fee exist 
+                    FeeService --> FeeController: response
+                end
+            deactivate FeeService
+            FeeController ---> FeeDetailScreen: response
+        deactivate FeeController
+        FeeDetailScreen --> User: data
+    deactivate FeeDetailScreen
+deactivate User
+@enduml
