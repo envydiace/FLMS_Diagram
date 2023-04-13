@@ -1,2 +1,42 @@
-@startuml sequence
+@startuml Create CLub
+actor ClubManager #Aquamarine
+participant CreateClubScreen
+participant ClubController
+participant ClubService
+participant ClubRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> CreateClubScreen: input data
+    activate CreateClubScreen
+        CreateClubScreen -> ClubController: CreateClub(CreateClubRequest)
+        activate ClubController
+            ClubController -> ClubService: CreateClub(request, UserID)
+            activate ClubService
+                ClubService -> ClubRepository: FindByClubName()
+                activate ClubRepository
+                    ClubRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ClubRepository: response
+                    deactivate SqlServer
+                    ClubRepository -> ClubService: response
+                deactivate ClubRepository
+                alt Club existed 
+                    ClubService --> ClubController: return error code
+                else Club not existed
+                    ClubService -> ClubRepository:  CreateAsync(club)
+                    activate ClubRepository
+                        ClubRepository -> SqlServer: executeUpdate(club)
+                        activate SqlServer
+                            SqlServer --> ClubRepository: response
+                        deactivate SqlServer
+                        ClubRepository -> ClubService: response
+                    deactivate ClubRepository
+                end
+            deactivate ClubService
+            ClubController --> CreateClubScreen: response
+        deactivate ClubController
+        CreateClubScreen --> ClubManager: return message
+    deactivate CreateClubScreen
+deactivate ClubManager
 @enduml
