@@ -1,2 +1,36 @@
-@startuml sequence
+@startuml Confirm Registration Fee 
+actor LeagueManager #Purple
+participant ConfirmFeeScreen
+participant ParticipationController
+participant ParticipationService
+participant ParticipationRepository
+participant MethodUtils
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> ConfirmFeeScreen: upload evidence and click button confirm
+    activate ConfirmFeeScreen
+        ConfirmFeeScreen -> ParticipationController: ConfirmRegistFee(ConfirmRegistFeeRequest)
+        activate ParticipationController
+            ParticipationController -> ParticipationService: ConfirmResgistFee(request, UserID)
+            activate ParticipationService
+                ParticipationService -> ParticipationRepository: FindByClubIdAndLeagueId()
+                activate ParticipationRepository
+                    ParticipationRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ParticipationRepository: response
+                    deactivate SqlServer
+                    ParticipationRepository --> ParticipationService: response
+                deactivate ParticipationRepository
+                alt participation not exist
+                    ParticipationService --> ParticipationController: return error code
+                else participation's fee was confirmed
+                    ParticipationService --> ParticipationController: return error code
+                else all condition valid
+                    
+                end
+            deactivate ParticipationService
+        deactivate ParticipationController
+    deactivate ConfirmFeeScreen
+deactivate LeagueManager
 @enduml

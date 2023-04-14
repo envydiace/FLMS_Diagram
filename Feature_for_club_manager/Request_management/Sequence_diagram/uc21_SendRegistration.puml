@@ -74,10 +74,10 @@ activate ClubManager
                     end
                 end
             deactivate ParticipateRequestService
-            RequestController --> MailSystem: Invoke send mail
+            RequestController -> MailSystem: Invoke send mail
             activate MailSystem
                 activate LeagueManager
-                MailSystem --> LeagueManager: Send mail inform
+                MailSystem -> LeagueManager: Send mail inform
                 deactivate LeagueManager
             deactivate MailSystem
             RequestController --> LeagueInfoScreen: return message
