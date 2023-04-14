@@ -1,0 +1,44 @@
+@startuml View Player Information (Guest)
+actor ClubManager #Aquamarine
+participant IncomingMatchScreen
+participant ClubController
+participant ClubService
+participant ClubRepository
+participant SquadRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> IncomingMatchScreen: view incoming match
+    activate IncomingMatchScreen
+        IncomingMatchScreen -> ClubController: GetIncomingMatches()
+        activate ClubController
+            ClubController -> ClubService: GetIncomingMatch(UserID)
+            activate ClubService
+                ClubService -> ClubRepository: FindByUserId()
+                activate ClubRepository
+                    ClubRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ClubRepository: response
+                    deactivate SqlServer
+                    ClubRepository --> ClubService: response
+                deactivate ClubRepository
+                alt Club not existed
+                    ClubService --> ClubController: return empty list
+                else Club exist 
+                    ClubService -> SquadRepository: FindByCondition(clubclone, status)
+                    activate SquadRepository
+                        SquadRepository -> SqlServer: executeQuery()
+                        activate SqlServer
+                            SqlServer --> SquadRepository: response
+                        deactivate SqlServer
+                        SquadRepository --> ClubService: response
+                    deactivate SquadRepository
+                    ClubService --> ClubController: response
+                end
+            deactivate ClubService
+            ClubController --> IncomingMatchScreen: response
+        deactivate ClubController
+        IncomingMatchScreen --> ClubManager: data
+    deactivate IncomingMatchScreen
+deactivate ClubManager
+@enduml
