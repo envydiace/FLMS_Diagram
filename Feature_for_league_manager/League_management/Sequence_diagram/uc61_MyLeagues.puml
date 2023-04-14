@@ -1,0 +1,31 @@
+@startuml My Leagues
+actor LeagueManager #Purple
+participant MyLeaguesSreen
+participant LeagueController
+participant LeagueService
+participant LeagueRepository
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> MyLeaguesSreen: view League list
+    activate MyLeaguesSreen
+        MyLeaguesSreen -> LeagueController: GetListLeagueByUser()
+        activate LeagueController
+            LeagueController -> LeagueService: GetListLeagueByUser(UserID)
+            activate LeagueService
+                LeagueService -> LeagueRepository: FindByUserId()
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer : executeQuery()
+                    activate SqlServer
+                        SqlServer --> LeagueRepository: response
+                    deactivate SqlServer
+                    LeagueRepository --> LeagueService: response
+                deactivate LeagueRepository
+                LeagueService --> LeagueController: response
+            deactivate LeagueService
+            LeagueController --> MyLeaguesSreen: response
+        deactivate LeagueController
+        MyLeaguesSreen --> LeagueManager: data
+    deactivate MyLeaguesSreen
+deactivate LeagueManager
+@enduml
