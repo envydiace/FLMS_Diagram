@@ -42,6 +42,13 @@ activate ClubManager
                         ParticipateRequestService --> RequestController: return error code
                     else all codition valid 
                         ParticipateRequestService -> ParticipateRequestRepository: FindByClubIdAndLeagueId()
+                        activate ParticipateRequestRepository
+                        ParticipateRequestRepository -> SqlServer : executeQuery()
+                            activate SqlServer
+                                SqlServer --> ParticipateRequestRepository: response
+                            deactivate SqlServer
+                        ParticipateRequestRepository --> ParticipateRequestService: response
+                        deactivate ParticipateRequestRepository
                         loop each request in list 
                             alt request of this club existed
                                 ParticipateRequestService --> RequestController: return error code
