@@ -1,2 +1,44 @@
-@startuml sequence
+@startuml Request List 
+actor ClubManager #Aquamarine
+participant RequestListScreen
+participant RequestController
+participant ParticipateRequestService
+participant  UserRepository
+participant ParticipateRequestRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> RequestListScreen: View requests
+    activate RequestListScreen
+        RequestListScreen -> RequestController: RequestListFilter(ListRequestFilterRequest)
+        activate RequestController
+            RequestController -> ParticipateRequestService : GetRequestList(request,UserID)
+            activate ParticipateRequestService
+                ParticipateRequestService -> UserRepository: FindByUserId()
+                activate UserRepository
+                    UserRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> UserRepository: response
+                    deactivate SqlServer
+                    UserRepository --> ParticipateRequestService: response
+                deactivate UserRepository
+                alt User not exist 
+                    ParticipateRequestService --> RequestController: return error code
+                else User exist 
+                    ParticipateRequestService -> ParticipateRequestRepository: FindByCondition(request)
+                    activate ParticipateRequestRepository
+                        ParticipateRequestRepository -> SqlServer: executeQuery()
+                            activate SqlServer
+                                SqlServer --> ParticipateRequestRepository: response
+                            deactivate SqlServer
+                        ParticipateRequestRepository --> ParticipateRequestService: response
+                    deactivate ParticipateRequestRepository
+                    ParticipateRequestService --> RequestController: response
+                end 
+            deactivate ParticipateRequestService
+            RequestController --> RequestListScreen: response
+        deactivate RequestController
+        RequestListScreen --> ClubManager: data
+    deactivate RequestListScreen
+deactivate ClubManager
 @enduml
