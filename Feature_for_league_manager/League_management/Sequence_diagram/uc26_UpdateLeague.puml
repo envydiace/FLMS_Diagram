@@ -1,0 +1,74 @@
+@startuml Update League
+actor LeagueManager #Purple
+participant UpdateLeagueScreen
+participant LeagueController
+participant LeagueService
+participant MethodUtils
+participant LeagueRepository
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> UpdateLeagueScreen: Input new league information
+    activate UpdateLeagueScreen
+        UpdateLeagueScreen -> LeagueController: GetLeagueUpdateInfo(LeagueId)
+        activate LeagueController
+            LeagueController -> LeagueService: GetLeagueUpdateInfo(LeagueId)
+            activate LeagueService
+                LeagueService -> LeagueRepository: FindByLeagueId()
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> LeagueRepository: response
+                    deactivate SqlServer
+                    LeagueRepository --> LeagueService: response
+                deactivate LeagueRepository
+                alt League not exist
+                    LeagueService --> LeagueController: return error code 
+                else League exist 
+                    LeagueService --> LeagueController: response
+                end
+            deactivate LeagueService
+            LeagueController --> UpdateLeagueScreen : response
+        deactivate LeagueController
+        UpdateLeagueScreen --> LeagueManager: Display data
+    deactivate UpdateLeagueScreen
+    LeagueManager -> UpdateLeagueScreen: input data update
+    activate UpdateLeagueScreen
+        UpdateLeagueScreen -> LeagueController: UpdateLeagueBasicInfo(LeagueUpdateInfoRequest)
+        activate LeagueController
+            LeagueController -> LeagueService: UpdateLeagueInfo(request,UserID)
+            activate LeagueService
+                LeagueService -> LeagueRepository: FindByLeagueId()
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> LeagueRepository: response
+                    deactivate SqlServer
+                    LeagueRepository --> LeagueService: response
+                deactivate LeagueRepository
+                alt League not exist
+                    LeagueService --> LeagueController: return error code
+                else League does not belong to User 
+                    LeagueService --> LeagueController: return error code
+                else all condition valid
+                    LeagueService -> LeagueRepository: UpdateAsync(league)
+                    activate LeagueRepository
+                        LeagueRepository -> SqlServer: executeUpdate(league)
+                        activate SqlServer
+                            SqlServer --> LeagueRepository: response
+                        deactivate SqlServer
+                        LeagueRepository --> LeagueService: response
+                    deactivate LeagueRepository
+                    alt Update failed
+                        LeagueService --> LeagueController: return error code
+                    else Update success 
+                        LeagueService --> LeagueController: response
+                    end 
+                end
+            deactivate LeagueService
+            LeagueController --> UpdateLeagueScreen: response
+        deactivate LeagueController
+        UpdateLeagueScreen --> LeagueManager: Display message
+    deactivate UpdateLeagueScreen
+deactivate LeagueManager
+@enduml
