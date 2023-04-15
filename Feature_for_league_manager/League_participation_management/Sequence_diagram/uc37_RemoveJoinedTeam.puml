@@ -1,0 +1,61 @@
+@startuml Remove joined team 
+actor LeagueManager #Purple
+actor ClubManager #Aquamarine
+actor MailSystem #Red
+participant ListClubJoinedScreen
+participant ParticipationController
+participant ParticipationService
+participant ParticipationRepository
+database SqlServer 
+
+activate LeagueManager
+    LeagueManager -> ListClubJoinedScreen : Click button remove (x)
+    activate ListClubJoinedScreen
+        ListClubJoinedScreen -> ParticipationController: RemoveJoinedClub(RemoveClubRequest)
+        activate ParticipationController
+            ParticipationController -> ParticipationService: RemoveJoinedTeam(request, UserID)
+            activate ParticipationService
+                ParticipationService -> ParticipationRepository: FindByRequest()
+                activate ParticipationRepository
+                    ParticipationRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ParticipationRepository: response
+                    deactivate SqlServer
+                    ParticipationRepository --> ParticipationService: response
+                deactivate ParticipationRepository
+                alt participation not exist 
+                    ParticipationService --> ParticipationController: return error code
+                else League not belong to user 
+                    ParticipationService --> ParticipationController: return error code
+                else League has been finished
+                    ParticipationService --> ParticipationController: return error code
+                else Club has been confirmed fee 
+                    ParticipationService --> ParticipationController: return error code
+                else all condition valid 
+                    ParticipationService -> ParticipationRepository: DeleteAsync(participation)
+                    activate ParticipationRepository
+                        ParticipationRepository -> SqlServer: executeUpdate(participation)
+                        activate SqlServer
+                            SqlServer --> ParticipationRepository: response
+                        deactivate SqlServer
+                        ParticipationRepository --> ParticipationService: response
+                    deactivate ParticipationRepository
+                    alt Remove club failed 
+                        ParticipationService --> ParticipationController: return error code
+                    else Remove club success 
+                        ParticipationService --> ParticipationController: return response + mail data
+                    end 
+                end 
+            deactivate ParticipationService
+            ParticipationController -> MailSystem: Invoke send mail
+            activate MailSystem
+                activate ClubManager
+                    MailSystem -> ClubManager: Send mail inform
+                deactivate ClubManager
+            deactivate MailSystem
+            ParticipationController --> ListClubJoinedScreen: return message
+        deactivate ParticipationController
+        ListClubJoinedScreen --> LeagueManager: Display message
+    deactivate ListClubJoinedScreen
+deactivate LeagueManager
+@enduml

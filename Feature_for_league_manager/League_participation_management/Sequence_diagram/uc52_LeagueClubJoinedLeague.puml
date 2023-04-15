@@ -1,5 +1,5 @@
 @startuml League Club Joined League
-actor LeagueManager
+actor LeagueManager #Purple
 participant ListClubJoinedScreen
 participant ParticipationController
 participant ParticipationService
