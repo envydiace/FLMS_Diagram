@@ -1,0 +1,78 @@
+@startuml Update Match Statistic
+actor LeagueManager #Purple
+participant MatchStatScreen
+participant MatchStatisticController
+participant MatchStatisticService
+participant MatchRepository
+participant MatchStatisticRepository
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> MatchStatScreen: input stats and click update
+    activate MatchStatScreen
+        MatchStatScreen -> MatchStatisticController: UpdateMatchStat(UpdateMatchStatRequest)
+        activate MatchStatisticController
+            MatchStatisticController -> MatchStatisticService: UpdateMatchStatistic(request, UserID)
+            activate MatchStatisticService
+                MatchStatisticService -> MatchRepository: FindByMatchId()
+                activate MatchRepository
+                    MatchRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> MatchRepository: response
+                    deactivate SqlServer
+                    MatchRepository --> MatchStatisticService: response
+                deactivate MatchRepository
+                alt Match not exist 
+                    MatchStatisticService --> MatchStatisticController: return error code
+                else Match finished
+                    MatchStatisticService --> MatchStatisticController: return error code
+                else Match not belong to user 
+                    MatchStatisticService --> MatchStatisticController: return error code
+                else all condition valid
+                    group Create stat or update stat for Home club and away club
+                        MatchStatisticService -> MatchStatisticRepository: FindByMatchId()
+                        activate MatchStatisticRepository
+                            MatchStatisticRepository -> SqlServer: executeQuery()
+                            activate SqlServer
+                                SqlServer --> MatchStatisticRepository: response
+                            deactivate SqlServer
+                            MatchStatisticRepository --> MatchStatisticService: response
+                        deactivate MatchStatisticRepository
+                        alt statistic not existed yet
+                            MatchStatisticService -> MatchStatisticRepository: CreateAsync(stat)
+                            activate MatchStatisticRepository
+                                MatchStatisticRepository -> SqlServer: executeUpdate(stat)
+                                activate SqlServer
+                                    SqlServer --> MatchStatisticRepository: response
+                                deactivate SqlServer
+                                MatchStatisticRepository --> MatchStatisticService: response
+                            deactivate MatchStatisticRepository
+                            alt Create failed 
+                                MatchStatisticService --> MatchStatisticController: return error code
+                            else Create success 
+                                MatchStatisticService --> MatchStatisticController: return success code
+                            end 
+                        else statistic already existed
+                            MatchStatisticService -> MatchStatisticRepository: UpdateAsync(stat)
+                            activate MatchStatisticRepository
+                                MatchStatisticRepository -> SqlServer: executeUpdate(stat)
+                                activate SqlServer
+                                    SqlServer --> MatchStatisticRepository: response
+                                deactivate SqlServer
+                                MatchStatisticRepository --> MatchStatisticService: response
+                            deactivate MatchStatisticRepository
+                            alt Update failed 
+                                MatchStatisticService --> MatchStatisticController: return error code
+                            else Update success 
+                                MatchStatisticService --> MatchStatisticController: return success code
+                            end 
+                        end
+                    end 
+                end 
+            deactivate MatchStatisticService
+            MatchStatisticController --> MatchStatScreen: return message
+        deactivate MatchStatisticController
+        MatchStatScreen --> LeagueManager: Display message
+    deactivate MatchStatScreen
+deactivate LeagueManager
+@enduml
