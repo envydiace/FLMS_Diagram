@@ -1,0 +1,31 @@
+@startuml League Club Joined League
+actor LeagueManager
+participant ListClubJoinedScreen
+participant ParticipationController
+participant ParticipationService
+participant ParticipationRepository
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> ListClubJoinedScreen: View list club joined
+    activate ListClubJoinedScreen
+        ListClubJoinedScreen -> ParticipationController: GetClubByLeague(ParticipationByLeagueRequest)
+        activate ParticipationController
+            ParticipationController -> ParticipationService: GetParticipationByLeague(request)
+            activate ParticipationService
+                ParticipationService -> ParticipationRepository: FindByLeagueIdAndClubName()
+                activate ParticipationRepository
+                    ParticipationRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ParticipationRepository: response
+                    deactivate SqlServer
+                    ParticipationRepository --> ParticipationService: response
+                deactivate ParticipationRepository
+                ParticipationService --> ParticipationController: response
+            deactivate ParticipationService
+            ParticipationController --> ListClubJoinedScreen: response
+        deactivate ParticipationController
+        ListClubJoinedScreen --> LeagueManager: data
+    deactivate ListClubJoinedScreen
+deactivate LeagueManager
+@enduml
