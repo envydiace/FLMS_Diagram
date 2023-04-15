@@ -1,0 +1,57 @@
+@startuml Update Match Info
+actor LeagueMangager #Purple
+participant UpdateMatchInfoScreen
+participant MatchController
+participant MatchService
+participant MatchRepository
+database SqlServer
+
+activate LeagueMangager
+    LeagueMangager -> UpdateMatchInfoScreen: Input data and click save
+    activate UpdateMatchInfoScreen
+        UpdateMatchInfoScreen -> MatchController: UpdateMatch(UpdateMatchInfoRequest)
+        activate MatchController
+            MatchController -> MatchService: UpdateMatchInfo(request, UserID)
+            activate MatchService
+                MatchService -> MatchRepository: FindByMatchId()
+                activate MatchRepository
+                    MatchRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> MatchRepository: response
+                    deactivate SqlServer
+                    MatchRepository --> MatchService: response
+                deactivate MatchRepository
+                alt match not exist 
+                    MatchService --> MatchController: return error code
+                else match not belong to user 
+                    MatchService --> MatchController: return error code
+                else match finised
+                    MatchService --> MatchController: return error code
+                else all condition valid
+                    alt request datetime wrong format
+                        MatchService --> MatchController: return error code
+                    else request datetime before league start date or after league end date 
+                        MatchService --> MatchController: return error code
+                    else all codition valid  
+                        MatchService -> MatchRepository: UpdateAsync(match)
+                        activate MatchRepository
+                            MatchRepository -> SqlServer: executeUpdate(match)
+                            activate SqlServer
+                                SqlServer --> MatchRepository: response
+                            deactivate SqlServer
+                            MatchRepository --> MatchService: response
+                        deactivate MatchRepository
+                        alt Update failed
+                            MatchService --> MatchController: return error code
+                        else Update success 
+                            MatchService --> MatchController: response
+                        end
+                    end 
+                end
+            deactivate MatchService
+            MatchController --> UpdateMatchInfoScreen: return message
+        deactivate MatchController
+        UpdateMatchInfoScreen --> LeagueMangager: Display message
+    deactivate UpdateMatchInfoScreen
+deactivate LeagueMangager
+@enduml
