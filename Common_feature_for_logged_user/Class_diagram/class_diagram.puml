@@ -73,7 +73,7 @@ class UserServiceImpl implements UserService {
 UserServiceImpl x--> UserRepository: userRepository
 ' UserServiceImpl x--> PasswordHelper
 UserServiceImpl x--> MethodUtils
-UserServiceImpl x--> TokenHelper
+UserServiceImpl x--> TokenHelper: tokenHelper
 
 interface BaseRepository<T>
 
@@ -98,6 +98,6 @@ class TokenHelper {
   +GenerateAccessToken(userId: int): string
   +HashTokenAsync(token: string): string
 }
-TokenHelper x--> UserRepository
+TokenHelper x--> UserRepository: userRepository
 
 @enduml
