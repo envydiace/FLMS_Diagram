@@ -1,4 +1,5 @@
 @startuml Feature for club manager - club management
+
 skinparam classFontSize 20
 
 class Club{
