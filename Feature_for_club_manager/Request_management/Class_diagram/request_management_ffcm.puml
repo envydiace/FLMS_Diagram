@@ -1,4 +1,4 @@
-@startuml Feature for club manager - request management
+@startuml Feature for club manager - request management 
 
 skinparam classFontSize 20
 

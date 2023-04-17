@@ -1,4 +1,4 @@
-@startuml Common feature for logged user
+@startuml Common feature for logged user 
 
 skinparam classFontSize 20
 
