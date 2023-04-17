@@ -1,2 +1,136 @@
 @startuml classDiagram
+
+skinparam classFontSize 20
+
+class Club{
+    +ClubId int
+    +UserId int
+    +ClubName string
+    +Email string
+    +PhoneNumber string
+    +CreateAt DateTime
+    +Logo string
+    +FanPage string
+}
+
+class League{
+    +LeagueId int
+    +UserId int
+    +LeagueName string
+    +NoParticipate int
+    +StartDate DateTime
+    +EndDate DateTime
+    +MaxNoPlayer int
+    +NoPlayerSquad int
+    +Location string
+    +Fanpage string
+    +CreateAt DateTime
+    +Description string
+    +LeagueType string
+    +NoRound int
+    +Logo string
+    +IsFinished bool
+}
+
+class Squad{
+    +SquadId int
+    +MatchId int
+    +IsHome bool
+    +NoPlayerSquad int
+}
+
+class ClubController{
+    +ClubController(clubService: ClubService)
+    +CreateClub(createClubRequest: CreateClubRequest): ActionResult<CreateResponse>
+    +GetClub(id: int): ActionResult<ClubResponse>
+    +GetListClubFilter(request: ListClubFilterRequest): ActionResult<ListClubResponse>
+    +DeleteClub(id: int): ActionResult<DeleteClubResponse>
+    +GetListClubByUser(): ActionResult<List<ClubByUserDTO>>
+    +GetClubLeagueHistory(id: int): ActionResult<List<ClubHistoryDTO>>
+    +GetIncomingMatches(): ActionResult<List<IncomingMatchDTO>>
+    +GetClubHistory(id: int): ActionResult<List<ClubHistoryDTO>>
+    +GetClubUpdateInfo(id: int): ActionResult<ClubUpdateInfoResponse>
+    +UpdateClubInfo(request: UpdateClubInfoRequest): ActionResult<ClubUpdateInfoResponse>
+}
+ClubController x--> ClubService: clubService
+
+interface ClubService
+
+class ClubServiceImpl implements ClubService{
+    +ClubServiceImpl(clubRepository: ClubRepository, squadRepository: SquadRepository, 
+    matchRepository: MatchRepository, participateNodeRepository: ParticipateNodeRepository)
+    +GetClubById(id: int): ClubResponse
+    +CreateClub(request: CreateClubRequest, UserId: int): CreateResponse
+    +GetListClubFilter(request: ListClubFilterRequest): ListClubResponse
+    +GetListClubByUser(userId: int): List<ClubByUserDTO>
+    +DeleteClub(id: int, userId: int): DeleteClubResponse
+    +GetClubLeagueHistory(clubId: int): List<ClubHistoryDTO>
+    +GetIncomingMatch(userId: int): List<IncomingMatchDTO>
+    +GetClubHistory(clubId: int): ClubHistoryResponse
+    +GetClubUpdateInfo(clubId: int): ClubUpdateInfoResponse
+    +UpdateClubInfo(request: UpdateClubInfoRequest, UserId: int): ClubUpdateInfoResponse
+}
+ClubServiceImpl x--> ClubRepository: clubRepository
+ClubServiceImpl x--> SquadRepository: squadRepository
+
+interface BaseRepository<T>
+
+class BaseRepositoryImpl<T> {
+  +BaseRepositoryImpl(dbContext: FLMS_DBContext)
+  +FindAll(): IQueryable<T>
+  +FindByCondition(expression: Expression<Func<T, bool>>):IQueryable<T>
+  +CreateAsync(entity: T): bool
+  +UpdateAsync(entity: T): T
+  +DeleteAsync(entity: T): T
+}
+BaseRepositoryImpl ..|> BaseRepository 
+
+interface ClubRepository<Club> implements BaseRepository
+ClubRepository --o Club
+
+class ClubRepositoryImpl implements ClubRepository
+
+interface SquadRepository<Squad> implements BaseRepository
+SquadRepository --o Squad
+
+class LeagueRepositoryImpl implements LeagueRepository
+
+class LeagueController{
+    +LeagueController(leagueService: LeagueService)
+    +CreateLeague(request: CreateLeagueRequest): ActionResult<CreateLeagueResponse>
+    +GetListLeagueFilters(request: ListLeagueFilterRequest): ActionResult<ListLeagueResponse>
+    +GetListLeagueInfo(id: int): ActionResult<LeagueInfoResponse>
+    +GetListLeagueByUser(): ActionResult<List<LeagueByUserDTO>>
+    +GetLeagueStatistic(id: int): ActionResult<LeagueLeagueStatisticResponse>
+    +GetKnockOutStatistic(id: int): ActionResult<LeagueKnockOutStatisticResponse>
+    +DeleteLeague(id: int): ActionResult<DeleteLeagueResponse>
+    +GetTopLeaguePrize(id: int): ActionResult<LeagueKnockOutStatisticResponse>
+    +GetLeagueUpdateInfo(id: int): ActionResult<LeagueUpdateInfoResponse>
+    +UpdateLeagueBasicInfo(request: LeagueUpdateInfoRequest): ActionResult<LeagueUpdateInfoResponse>
+}
+LeagueController x--> LeagueService: leagueService
+
+interface LeagueService
+
+class LeagueServiceImpl implements LeagueService{
+    +LeagueServiceImpl(leagueRepository: LeagueRepository, matchRepository: MatchRepository)
+    +CreateLeague(request: CreateLeagueRequest, userId: int): CreateLeagueResponse
+    +GetListLeagueFilters(request: ListLeagueFilterRequest): ListLeagueResponse
+    +GetLeagueInfo(leagueId: int): LeagueInfoResponse
+    +GetListLeagueByUser(userId: int): List<LeagueByUserDTO>
+    +GetLeagueTopEvent(leagueId: int): TopEventResponse
+    +GetLeagueTopPrize(size: int): TopLeaguePrizeResponse
+    +GetLeagueStatisticTypeLeague(leagueId: int): LeagueLeagueStatisticResponse
+    +GetLeagueStatisticTypeKO(leagueId: int): LeagueKnockOutStatisticResponse
+    +DeleteLeague(leagueId: int, userId: int): DeleteLeagueResponse
+    +GetLeagueUpdateInfo(leagueId: int): LeagueUpdateInfoResponse
+    +UpdateLeagueInfo(request: LeagueUpdateInfoRequest, UserId: int): LeagueUpdateInfoResponse
+}
+LeagueServiceImpl x--> LeagueRepository: leagueRepository
+
+interface LeagueRepository<League> implements BaseRepository
+LeagueRepository --o League
+
+class LeagueRepositoryImpl implements LeagueRepository
+
 @enduml
