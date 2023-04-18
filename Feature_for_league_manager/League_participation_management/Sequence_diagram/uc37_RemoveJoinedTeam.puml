@@ -47,7 +47,7 @@ activate LeagueManager
                     end 
                 end 
             deactivate ParticipationService
-            ParticipationController -> MailSystem: Invoke send mail
+            ParticipationController ->> MailSystem: Invoke send mail
             activate MailSystem
                 activate ClubManager
                     MailSystem -> ClubManager: Send mail inform
