@@ -1,0 +1,35 @@
+@startuml View Club Information (Club)
+actor ClubManager
+participant ClubInfoScreen
+participant ClubController
+participant ClubService
+participant ClubRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> ClubInfoScreen: Click on a club
+    activate ClubInfoScreen
+        ClubInfoScreen -> ClubController: GetClub(id)
+        activate ClubController
+            ClubController -> ClubService: GetClubById(id)
+            activate ClubService
+                ClubService -> ClubRepository: FindByClubId()
+                activate ClubRepository
+                    ClubRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ClubRepository: response
+                    deactivate SqlServer
+                    ClubRepository --> ClubService: response
+                deactivate ClubRepository
+                alt Club not existed
+                    ClubService --> ClubController: return error code
+                else Club exist 
+                    ClubService --> ClubController: response
+                end
+            deactivate ClubService
+            ClubController ---> ClubInfoScreen: response
+        deactivate ClubController
+        ClubInfoScreen --> ClubManager: data
+    deactivate ClubInfoScreen
+deactivate ClubManager
+@enduml
