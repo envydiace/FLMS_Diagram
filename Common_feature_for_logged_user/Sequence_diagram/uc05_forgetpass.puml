@@ -50,8 +50,9 @@ activate User
                 end
             deactivate UserService
             UserController --> ForgetPassScreen: response
+                UserController ->> MailServer: Invoke send mail
             activate MailServer
-                UserController --> MailServer: Invoke send mail
+            MailServer -> User: send mail
         deactivate UserController
     deactivate ForgetPassScreen
         User -> MailServer: Click on reset password link

@@ -1,5 +1,7 @@
 @startuml Confirm Registration Fee 
 actor LeagueManager #Purple
+actor ClubManager #Aquamarine
+actor MailSystem #Red
 participant ConfirmFeeScreen
 participant ParticipationController
 participant ParticipationService
@@ -27,10 +29,43 @@ activate LeagueManager
                 else participation's fee was confirmed
                     ParticipationService --> ParticipationController: return error code
                 else all condition valid
-                    
+                    group Update club clone's club id if league type ='LEAGUE'
+                        ParticipationService -> MethodUtils: GetLeagueTypeByName(participation.League.LeagueType)
+                        activate MethodUtils
+                            MethodUtils --> ParticipationService: Leaguetype
+                        deactivate MethodUtils
+                        alt LeagueType ='LEAGUE'
+                            alt clubclone existed
+                                ParticipationService -> ParticipationService: clubClone.ClubId = request.ClubId
+                            else club clone not existed
+                            ParticipationService --> ParticipationController: return error code
+                            end 
+                        end
+                    end
+                    ParticipationService -> ParticipationRepository: UpdateAsync(participation)
+                    activate ParticipationRepository
+                        ParticipationRepository -> SqlServer: executeUpdate(participation)
+                        activate SqlServer
+                            SqlServer --> ParticipationRepository: response
+                        deactivate SqlServer
+                        ParticipationRepository --> ParticipationService: response
+                    deactivate ParticipationRepository
+                    alt Update failed 
+                        ParticipationService --> ParticipationController: return error code
+                    else Update success
+                        ParticipationService --> ParticipationController: response + mailData
+                    end
                 end
             deactivate ParticipationService
+            ParticipationController ->> MailSystem: Invoke send mail
+            activate MailSystem
+                activate ClubManager
+                MailSystem -> ClubManager: send mail
+                deactivate ClubManager
+            deactivate MailSystem 
+            ParticipationController --> ConfirmFeeScreen: return message
         deactivate ParticipationController
+        ConfirmFeeScreen --> LeagueManager: Display message
     deactivate ConfirmFeeScreen
 deactivate LeagueManager
 @enduml
