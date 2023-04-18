@@ -1,0 +1,31 @@
+@startuml ClubList(Guest)
+actor ClubManager #Aquamarine
+participant ClubListScreen
+participant ClubController
+participant ClubService
+participant ClubRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> ClubListScreen: Input name to search club
+    activate ClubListScreen
+        ClubListScreen -> ClubController: GetListClubByUser()
+        activate ClubController
+            ClubController -> ClubService: GetListClubByUser(UserID)
+            activate ClubService
+                ClubService -> ClubRepository: FindByUserId()
+                activate ClubRepository
+                    ClubRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ClubRepository : response
+                    deactivate SqlServer
+                    ClubRepository --> ClubService: response
+                deactivate ClubRepository
+                ClubService --> ClubController: response
+            deactivate ClubService
+            ClubController --> ClubListScreen: response
+        deactivate ClubController
+        ClubListScreen --> ClubManager: data
+    deactivate ClubListScreen
+deactivate ClubManager 
+@enduml
