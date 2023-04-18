@@ -1,0 +1,31 @@
+@startuml View Match Event(Guest)
+actor User 
+participant MatchEventScreen
+participant EventController
+participant MatchEventService
+participant MatchEventRepository
+database SqlServer
+
+activate User 
+    User -> MatchEventScreen: Click on tab match event
+    activate MatchEventScreen
+        MatchEventScreen -> EventController: GetMatchEvent(matchId)
+        activate EventController
+            EventController -> MatchEventService: GetMatchEvent(matchId)
+            activate MatchEventService
+                MatchEventService -> MatchEventRepository: FindByMatchId()
+                activate MatchEventRepository
+                    MatchEventRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> MatchEventRepository: response
+                    deactivate SqlServer
+                    MatchEventRepository --> MatchEventService: response
+                deactivate MatchEventRepository
+                MatchEventService --> EventController: response
+            deactivate MatchEventService
+            EventController --> MatchEventScreen: data
+        deactivate EventController
+        MatchEventScreen --> User: Show data
+    deactivate MatchEventScreen
+deactivate User 
+@enduml
