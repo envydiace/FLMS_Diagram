@@ -1,0 +1,35 @@
+@startuml View League Information (League)
+actor LeagueManager #Purple
+participant LeagueInfoScreen
+participant LeagueController
+participant LeagueService
+participant LeagueRepository
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> LeagueInfoScreen: Click on a league
+    activate LeagueInfoScreen
+        LeagueInfoScreen -> LeagueController: GetLeagueInfo(id)
+        activate LeagueController
+            LeagueController -> LeagueService: GetLeagueInfo(id)
+            activate LeagueService
+                LeagueService -> LeagueRepository: FindByLeagueId()
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> LeagueRepository : response
+                    deactivate SqlServer
+                    LeagueRepository --> LeagueService: response
+                deactivate LeagueRepository
+                alt League exist
+                LeagueService --> LeagueController: response
+                else League not existed
+                    LeagueService --> LeagueController: return error code
+                end
+            deactivate LeagueService
+            LeagueController --> LeagueInfoScreen: response
+        deactivate LeagueController
+        LeagueInfoScreen --> LeagueManager: data
+    deactivate LeagueInfoScreen
+deactivate LeagueManager 
+@enduml
