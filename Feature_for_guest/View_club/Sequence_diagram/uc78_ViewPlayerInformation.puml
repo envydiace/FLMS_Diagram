@@ -1,0 +1,35 @@
+@startuml View Player Information (Guest)
+actor User
+participant PlayerInfoScreen
+participant PlayerController
+participant PlayerService
+participant PlayerRepository
+database SqlServer
+
+activate User
+    User -> PlayerInfoScreen: Click on a player
+    activate PlayerInfoScreen
+        PlayerInfoScreen -> PlayerController: GetPlayer(playerId)
+        activate PlayerController
+            PlayerController -> PlayerService: GetPlayerById(playerId)
+            activate PlayerService
+                PlayerService -> PlayerRepository: FindByPlayerId()
+                activate PlayerRepository
+                    PlayerRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> PlayerRepository: response
+                    deactivate SqlServer
+                    PlayerRepository --> PlayerService: response
+                deactivate PlayerRepository
+                alt Player not existed
+                    PlayerService --> PlayerController: return error code
+                else Player exist 
+                    PlayerService --> PlayerController: response
+                end
+            deactivate PlayerService
+            PlayerController ---> PlayerInfoScreen: response
+        deactivate PlayerController
+        PlayerInfoScreen --> User: data
+    deactivate PlayerInfoScreen
+deactivate User
+@enduml
