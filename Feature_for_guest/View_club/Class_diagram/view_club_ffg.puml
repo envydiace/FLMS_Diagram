@@ -1,0 +1,200 @@
+@startuml Feature for guest - View club 
+
+skinparam classFontSize 20
+
+class Club{
+    +ClubId int
+    +UserId int
+    +ClubName string
+    +Email string
+    +PhoneNumber string
+    +CreateAt DateTime
+    +Logo string
+    +FanPage string
+}
+
+class Player{
+    +PlayerId int
+    +Name string
+    +NickName string
+    +Dob DateTime
+    +Height string
+    +Weight string
+    +Address string
+    +PhoneNumber string
+    +Email string
+    +SocialCont string
+    +Avatar string
+}
+
+class Match{
+    +MatchId int
+    +LeagueId int
+    +HomeId int
+    +AwayId int
+    +MatchDate DateTime
+    +IsFinish bool
+    +Round string
+    +Stadium string
+}
+
+class ParticipateNode{
+    +ParticipateNodeId int
+    +ParticipateId int
+    +ClubCloneId int
+    +Deep int
+    +ParentId int
+    +LeftId int
+    +RightId int
+    +LeagueId int
+}
+
+class MatchEvent{
+    +MatchEventId int
+    +MainId int
+    +SubId int
+    +MatchId int
+    +EventType string
+    +EventTime int
+    +IsHome bool
+}
+
+class ClubController{
+    +ClubController(clubService: ClubService)
+    +CreateClub(createClubRequest: 
+    CreateClubRequest): ActionResult<CreateResponse>
+    +GetClub(id: int): ActionResult<ClubResponse>
+    +GetListClubFilter(request: 
+    ListClubFilterRequest): ActionResult<ListClubResponse>
+    +DeleteClub(id: int): ActionResult<DeleteClubResponse>
+    +GetListClubByUser(): ActionResult<List<ClubByUserDTO>>
+    +GetClubLeagueHistory(id: int): ActionResult<List<ClubHistoryDTO>>
+    +GetIncomingMatches(): ActionResult<List<IncomingMatchDTO>>
+    +GetClubHistory(id: int): ActionResult<List<ClubHistoryDTO>>
+    +GetClubUpdateInfo(id: int): ActionResult<ClubUpdateInfoResponse>
+    +UpdateClubInfo(request: 
+    UpdateClubInfoRequest): ActionResult<ClubUpdateInfoResponse>
+}
+ClubController x--> ClubService: clubService
+
+interface ClubService
+
+class ClubServiceImpl implements ClubService{
+    +ClubServiceImpl(clubRepository: ClubRepository, squadRepository: SquadRepository, matchRepository: 
+    MatchRepository, participateNodeRepository: ParticipateNodeRepository)
+    +GetClubById(id: int): ClubResponse
+    +CreateClub(request: CreateClubRequest, UserId: int): CreateResponse
+    +GetListClubFilter(request: ListClubFilterRequest): ListClubResponse
+    +GetListClubByUser(userId: int): List<ClubByUserDTO>
+    +DeleteClub(id: int, userId: int): DeleteClubResponse
+    +GetClubLeagueHistory(clubId: int): List<ClubHistoryDTO>
+    +GetIncomingMatch(userId: int): List<IncomingMatchDTO>
+    +GetClubHistory(clubId: int): ClubHistoryResponse
+    +GetClubUpdateInfo(clubId: int): ClubUpdateInfoResponse
+    +UpdateClubInfo(request: UpdateClubInfoRequest, 
+    UserId: int): ClubUpdateInfoResponse
+}
+ClubServiceImpl x--> ClubRepository: clubRepository
+
+class MatchController{
+    +MatchController(matchService: MatchService)
+    +GetMatchInfo(matchId: int): ActionResult<MatchInfoResponse>
+    +GetLeagueSchedule(request: LeagueScheduleRequest): ActionResult<LeagueScheduleResponse>
+    +GetClubSchedule(clubId: int): ActionResult<ClubScheduleResponse>
+    +FinishMatch(id: int): ActionResult<FinishMatchResponse>
+    +UpdateMatch(request: UpdateMatchInfoRequest): ActionResult<UpdateMatchInfoResponse>
+}
+
+MatchController x--> MatchService: matchService
+
+interface MatchService
+
+class MatchServiceImpl implements MatchService{
+    +MatchServiceImpl(matchRepository: MatchRepository, matchEventRepository: 
+    MatchEventRepository, participateNodeRepository: ParticipateNodeRepository)
+    +GetLeagueSchedule(request: LeagueScheduleRequest ): LeagueScheduleResponse
+    +GetClubSchedule(ClubId: int): ClubScheduleResponse
+    +GetMatchInfo(matchId: int): MatchInfoResponse
+    +FinishMatch(matchId: int, userId: int): FinishMatchResponse
+    +UpdateMatchInfo(request: UpdateMatchInfoRequest,UserId: int): UpdateMatchInfoResponse
+}
+MatchServiceImpl x--> MatchRepository: matchRepository
+MatchServiceImpl x--> MatchEventRepository: matchEventRepository
+MatchServiceImpl x--> ParticipateNodeRepository: participateNodeRepository
+
+interface MatchRepository<Match> implements BaseRepository
+MatchRepository --o Match
+
+class MatchRepositoryImpl implements MatchRepository
+
+interface ParticipateNodeRepository<ParticipateNode> implements BaseRepository
+ParticipateNodeRepository --o ParticipateNode
+
+class ParticipateNodeRepositoryImpl implements ParticipateNodeRepository
+
+interface MatchEventRepository<MatchEvent> implements BaseRepository
+MatchEventRepository --o MatchEvent
+
+class MatchEventRepositoryImpl implements MatchEventRepository
+
+interface BaseRepository<T>
+
+class BaseRepositoryImpl<T> {
+  +BaseRepositoryImpl(dbContext: FLMS_DBContext)
+  +FindAll(): IQueryable<T>
+  +FindByCondition(expression: Expression<Func<T, bool>>):IQueryable<T>
+  +CreateAsync(entity: T): bool
+  +UpdateAsync(entity: T): T
+  +DeleteAsync(entity: T): T
+}
+BaseRepositoryImpl ..|> BaseRepository 
+
+interface ClubRepository<Club> implements BaseRepository
+ClubRepository --o Club
+
+class ClubRepositoryImpl implements ClubRepository
+
+class PlayerController{
+    +PlayerController(playerService: PlayerService)
+    +CreatePlayer(createPlayerRequest: 
+    CreatePlayerRequest): ActionResult<CreateResponse>
+    +GetPlayer(id: int): ActionResult<PlayerResponse>
+    +GetListPlayerFilter(request: 
+    ListPlayerFilterRequest): ActionResult<ListPlayerResponse>
+    +DeletePlayer(id: int): ActionResult<DeletePlayerResponse>
+    +UpdatePlayer(request: 
+    UpdatePlayerRequest): ActionResult<UpdatePlayerResponse>
+    +GetPlayerByNickName(nickname: string): ActionResult<PlayerResponse>
+    +DeletePlayerClub(request: 
+    DeletePlayerClubRequest): ActionResult<DeletePlayerClubResponse>
+    +GetPlayerByClubManager(request: 
+    GetPlayerByClubManagerRequest): ActionResult<GetPlayerByClubManagerResponse>
+}
+PlayerController x--> PlayerService: playerService
+
+interface PlayerService
+
+class PlayerServiceImpl implements PlayerService{
+    +PlayerServiceImpl(playerRepository: PlayerRepository, playerClubRepository: 
+    PlayerClubRepository, clubRepository: ClubRepository)
+    +GetPlayerById(id: int): PlayerResponse
+    +GetPlayerByNickname(nickname: string): PlayerResponse
+    +CreatePlayer(request: CreatePlayerRequest, UserId: int): CreateResponse
+    +GetListPlayerFilter(request: ListPlayerFilterRequest): ListPlayerResponse
+    +DeletePlayer(id: int, UserId: int): DeletePlayerResponse
+    +UpdatePlayer(request: UpdatePlayerRequest, 
+    UserId: int): UpdatePlayerResponse
+    +DeletePlayerClub(request: DeletePlayerClubRequest, 
+    UserId: int): DeletePlayerClubResponse
+    +GetPlayerByClubManager(request: GetPlayerByClubManagerRequest, 
+    UserId: int): GetPlayerByClubManagerResponse
+}
+PlayerServiceImpl x--> PlayerRepository: playerRepository
+PlayerServiceImpl x--> ClubRepository: clubRepository
+
+interface PlayerRepository<Player> implements BaseRepository
+PlayerRepository --o Player
+
+class PlayerRepositoryImpl implements PlayerRepository
+
+@enduml

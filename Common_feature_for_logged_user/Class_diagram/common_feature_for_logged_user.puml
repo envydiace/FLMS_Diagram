@@ -1,0 +1,103 @@
+@startuml Common feature for logged user 
+
+skinparam classFontSize 20
+
+class User {
+  +UserId: int
+  +Email: string
+  +Password: string
+  +PasswordSalt: string
+  +FullName: string
+  +Phone: string
+  +Address: string
+  +Active: bool
+  +CreateAt: DateTime
+  +Role: string
+  +Avatar: string
+  +ResetToken: string
+  +TokenExpire:	DateTime
+}
+
+' class PasswordHelper {
+'   +HashUsingPbkdf2(password: string, salt: byte[]): string
+' }
+
+class MethodUtils{
+  +CheckLeagueType(type: string): bool
+  +CheckUserRole(role: string): bool
+  +GetLeagueTypeByName(name: string): Constants.LeagueType?
+  +GetMatchEventTypeByName(name: string): Constants.MatchEventType?
+  +CheckFeeType(feeType: string): bool
+  +CheckEditableFeeKey(feeKey: string): bool
+  +CountNumberOfRound(type: string, NumberOfParticipate: int): int
+  +GetKoRoot(numberOfParticipate: int): ParticipateNodeDTO
+  +GetKoListBFS(root: ParticipateNodeDTO): List<ParticipateNodeDTO>
+  +GetKoList(numberOfParticipate: int): List<ParticipateNodeDTO>
+  +GetListMatches(ListTeam: List<string>): string[][]
+  +GenerateMatchSquad(NoPlayerInSquad: int, MaxPlayerInTeam: int): int
+  +GetLeagueKoRound(deep: int): string?
+  +CountLeagueDateRange(type: string, numberOfParticipation: int): int
+  +SumTotalLeagueFee(leagueFees: List<LeagueFeeDTO>): decimal
+  +GetPlayerNumber(squadPosition: SquadPosition): int
+  +GetNodeScore(node: ParticipateNode): int
+  +SetColumnWidths(worksheet: IXLWorksheet): void
+}
+
+class UserController {
+  +UserController(userService: UserService)
+  +ChangePassword(changePasswordRequest: ChangePasswordRequest): ActionResult<ChangePasswordResponse>
+  +EditProfile(request: EditProfileRequest): ActionResult<EditProfileResponse>
+  +Signup(signupRequest: SignupRequest): ActionResult<SignupResponse>
+  +Login(loginRequest: LoginRequest): ActionResult<TokenResponse>
+  +Logout(): ActionResult<LogoutResponse>
+  +GetUserProfile(): ActionResult<UserProfileResponse>
+  +ForgotPass(email: string ): ActionResult<ForgotPassResponse>
+  +ChangeNewPass(request: ChangeNewPassRequest): ActionResult<ChangeNewPassResponse>  
+}
+UserController x--> UserService: userService
+
+interface UserService
+
+class UserServiceImpl implements UserService {
+  +UserServiceImpl(userRepository: UserRepository,tokenRepository: TokenRepository, 
+  tokenService: TokenService, tokenHelper: TokenHelper, configuration: IConfiguration)
+  +CheckSignUp(signupRequest: SignupRequest): SignupResponse
+  +LoginAsync(LoginRequest loginRequest):TokenResponse
+  +LogoutAsync(userId: int): LogoutResponse
+  +GetUserProfile(userId: int): UserProfileResponse
+  +ChangePass(changePasswordRequest: ChangePasswordRequest, UserId: int): ChangePasswordResponse
+  +EditProfile(request: EditProfileRequest,userId: int): EditProfileResponse
+  +ForgotPassword(email: string): ForgotPassResponse
+  +ChangeNewPass(request: ChangeNewPassRequest): ChangeNewPassResponse
+}
+UserServiceImpl x--> UserRepository: userRepository
+' UserServiceImpl x--> PasswordHelper
+UserServiceImpl x--> MethodUtils
+UserServiceImpl x--> TokenHelper: tokenHelper
+
+interface BaseRepository<T>
+
+class BaseRepositoryImpl<T> {
+  +BaseRepositoryImpl(dbContext: FLMS_DBContext)
+  +FindAll(): IQueryable<T>
+  +FindByCondition(expression: Expression<Func<T, bool>>):IQueryable<T>
+  +CreateAsync(entity: T): bool
+  +UpdateAsync(entity: T): T
+  +DeleteAsync(entity: T): T
+}
+BaseRepositoryImpl ..|> BaseRepository 
+
+interface UserRepository<User> implements BaseRepository
+UserRepository --o User
+
+class UserRepositoryImpl implements UserRepository
+
+class TokenHelper {
+  +TokenHelper(configuration: IConfiguration, 
+  userRepository: UserRepository)
+  +GenerateAccessToken(userId: int): string
+  +HashTokenAsync(token: string): string
+}
+TokenHelper x--> UserRepository: userRepository
+
+@enduml
