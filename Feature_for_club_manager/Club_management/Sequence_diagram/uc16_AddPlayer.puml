@@ -3,6 +3,7 @@ actor ClubManager #AquaMarine
 participant AddPlayerScreen
 participant PlayerController
 participant PlayerService
+participant PlayerClubRepository
 participant PlayerRepository
 database SqlServer
 
@@ -38,14 +39,14 @@ activate ClubManager
                         alt Player was already added to Club in request
                             PlayerService --> PlayerController : return error code
                         else
-                            PlayerService -> PlayerRepository: CreateAsync(playerclub)
-                            activate PlayerRepository
-                                PlayerRepository -> SqlServer: executeUpdate()
+                            PlayerService -> PlayerClubRepository: CreateAsync(playerclub)
+                            activate PlayerClubRepository
+                                PlayerClubRepository -> SqlServer: executeUpdate()
                                 activate SqlServer
-                                    SqlServer --> PlayerRepository: response
+                                    SqlServer --> PlayerClubRepository: response
                                 deactivate SqlServer
-                            PlayerRepository --> PlayerService: response
-                            deactivate PlayerRepository
+                            PlayerClubRepository --> PlayerService: response
+                            deactivate PlayerClubRepository
                             alt create player success
                                 PlayerService --> PlayerController : return success code
                             else create player failed
