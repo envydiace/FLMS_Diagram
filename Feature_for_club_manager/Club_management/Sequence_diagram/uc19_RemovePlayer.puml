@@ -1,0 +1,47 @@
+@startuml Remove Player
+actor ClubManager #Aquamarine
+participant PlayerListScreen
+participant PlayerController
+participant PlayerService
+Participant PlayerClubRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> PlayerListScreen: Click button remove player
+    activate PlayerListScreen
+        PlayerListScreen -> PlayerController: DeletePlayerClub(request)
+        activate PlayerController
+            PlayerController -> PlayerService: DeletePlayerClub(request, UserId)
+            activate PlayerService
+                PlayerService -> PlayerClubRepository: FindByPlayerIdAndClubId()
+                activate PlayerClubRepository
+                    PlayerClubRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> PlayerClubRepository: response
+                    deactivate SqlServer
+                    PlayerClubRepository --> PlayerService: response
+                deactivate PlayerClubRepository
+                alt PlayerClub not existed
+                    PlayerService --> PlayerController: return error code
+                else playerclub existed 
+                    PlayerService -> PlayerClubRepository: DeleteAsync(playerclub)
+                    activate PlayerClubRepository
+                    PlayerClubRepository -> SqlServer: executeUpdate(playerclub)
+                        activate SqlServer
+                            SqlServer --> PlayerClubRepository: response
+                        deactivate SqlServer
+                        PlayerClubRepository --> PlayerService: response
+                    deactivate PlayerClubRepository
+                    alt Delete failed 
+                        PlayerService --> PlayerController: return error code
+                    else Delete success
+                        PlayerService --> PlayerController: response
+                    end
+                end
+            deactivate PlayerService
+            PlayerController --> PlayerListScreen: return message
+        deactivate PlayerController
+        PlayerListScreen --> ClubManager: Display message
+    deactivate PlayerListScreen
+deactivate ClubManager
+@enduml
