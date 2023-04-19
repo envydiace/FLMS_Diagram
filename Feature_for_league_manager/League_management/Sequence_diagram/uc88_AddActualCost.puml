@@ -1,0 +1,65 @@
+@startuml Add Actual Cost 
+actor LeagueManager #Purple
+participant AddFeeScreen
+participant FeeController
+participant FeeService
+participant LeagueRepository
+participant MethodUtils
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> AddFeeScreen: Input fee data
+    activate AddFeeScreen
+        AddFeeScreen -> FeeController: AddLeagueFee(request)
+        activate FeeController
+            FeeController  -> FeeService: AddListLeagueFee(request, UserID)
+            activate FeeService
+                FeeService -> LeagueRepository: FindByLeagueId()
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer: executeQuery()
+                    activate SqlServer 
+                        SqlServer --> LeagueRepository: response
+                    deactivate SqlServer
+                    LeagueRepository --> FeeService: response
+                deactivate LeagueRepository
+                alt League does not exist 
+                    FeeService --> FeeController : return error code
+                else League does not belong to user
+                    FeeService --> FeeController : return error code
+                else request fee is plan and league has finished
+                    FeeService --> FeeController : return error code
+                else request fee is actual and league has not finished
+                    FeeService --> FeeController : return error code
+                else all condition valid 
+                    loop for each fee in request list fee
+                        group Check fee type if it valid 
+                            FeeService -> MethodUtils: CheckFeeType(fee.feeType)
+                            activate MethodUtils
+                                MethodUtils --> FeeService: true or false
+                            deactivate MethodUtils
+                            alt Fee type valid
+                                FeeService -> FeeService: Add new league fee to league
+                            end
+                        end
+                    end
+                    FeeService -> LeagueRepository: UpdateAsync(league)
+                    activate LeagueRepository
+                        LeagueRepository -> SqlServer: executeUpdate(league)
+                        activate SqlServer
+                            SqlServer --> LeagueRepository: response
+                        deactivate SqlServer
+                        LeagueRepository --> FeeService: response
+                    deactivate LeagueRepository
+                    alt Update failed
+                        FeeService --> FeeController : return error code
+                    else Update success 
+                        FeeService --> FeeController : return success code
+                    end
+                end
+            deactivate FeeService
+            FeeController --> AddFeeScreen: return message
+        deactivate FeeController
+        AddFeeScreen --> LeagueManager: Display message
+    deactivate AddFeeScreen
+deactivate LeagueManager
+@enduml
