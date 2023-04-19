@@ -1,0 +1,53 @@
+@startuml Delete Club 
+actor ClubManager #Aquamarine
+participant ClubInfoScreen
+participant ClubController
+participant ClubService
+participant ClubRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> ClubInfoScreen: Click button delete and click yes on popup
+    activate ClubInfoScreen
+        ClubInfoScreen -> ClubController: DeleteClub(clubId)
+        activate ClubController
+            ClubController -> ClubService: DeleteClub(clubId, UserId)
+            activate ClubService
+                ClubService -> ClubRepository: FindByClubId()
+                activate ClubRepository
+                    ClubRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ClubRepository: response
+                    deactivate SqlServer
+                    ClubRepository --> ClubService: response
+                deactivate ClubRepository
+                alt Club not exist
+                    ClubService --> ClubController: return error code
+                else Club does not belong to user 
+                    ClubService --> ClubController: return error code
+                else Club still have some request then can't be deleted
+                    ClubService --> ClubController: return error code
+                else Clubs that have participated in some leagues cannot be deleted
+                    ClubService --> ClubController: return error code
+                else all condition valid 
+                    ClubService -> ClubRepository: DeleteAsync(club)
+                    activate ClubRepository
+                        ClubRepository -> SqlServer: executeUpdate(club)
+                        activate SqlServer
+                            SqlServer --> ClubRepository: response
+                        deactivate SqlServer
+                        ClubRepository --> ClubService: response
+                    deactivate ClubRepository
+                    alt Delete failed
+                        ClubService --> ClubController: return error code
+                    else Delete success
+                        ClubService --> ClubController: response
+                    end 
+                end
+            deactivate ClubService
+            ClubController --> ClubInfoScreen: return message
+        deactivate ClubController
+        ClubInfoScreen --> ClubManager: Display message
+    deactivate ClubInfoScreen
+deactivate ClubManager
+@enduml
