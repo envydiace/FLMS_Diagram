@@ -35,7 +35,7 @@ activate LeagueManager
                         group Check fee type if it valid 
                             FeeService -> MethodUtils: CheckFeeType(fee.feeType)
                             activate MethodUtils
-                                MethodUtils --> FeeService: true or false
+                                MethodUtils --> FeeService: fee type
                             deactivate MethodUtils
                             alt Fee type valid
                                 FeeService -> FeeService: Add new league fee to league

@@ -1,0 +1,118 @@
+@startuml Confirm match finish
+actor LeagueManager #Purple
+participant MatchScheduleScreen
+participant MatchController
+participant MatchService
+participant MatchRepository
+participant MatchEventRepository
+participant ParticipateNodeRepository
+participant MethodUtils
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> MatchScheduleScreen: Click finish button of that match
+    activate MatchScheduleScreen
+        MatchScheduleScreen -> MatchController: FinishMatch(matchId)
+        activate MatchController
+            MatchController -> MatchService: FinishMatch(matchId, UserID)
+            activate MatchService
+                MatchService -> MatchRepository: FindByMatchId()
+                activate MatchRepository
+                    MatchRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> MatchRepository: response
+                    deactivate SqlServer
+                    MatchRepository --> MatchService: response
+                deactivate MatchRepository
+                alt Match does not exist 
+                    MatchService --> MatchController: return error code
+                else League does not belong to User
+                    MatchService --> MatchController: return error code
+                else Match has been finished
+                    MatchService --> MatchController: return error code
+                else Match participation doesn't complete
+                    MatchService --> MatchController: return error code
+                else all condition valid 
+                    group Calculate WLD for home club and away club
+                        MatchService -> MatchEventRepository: FindByMatchIdAndEventType()
+                        activate MatchEventRepository
+                            MatchEventRepository -> SqlServer: executeQuery()
+                            activate SqlServer
+                                SqlServer --> MatchEventRepository: response
+                            deactivate SqlServer
+                            MatchEventRepository --> MatchService: response(listGoals)
+                        deactivate MatchEventRepository
+                        group Count home score and away score by listGoals
+                            alt homeScore > awayScore
+                                MatchService -> MatchService: Add a won match for home club and loss match for away club
+                            else homeScore < awayScore 
+                                MatchService -> MatchService: Add a loss match for home club and won match for away club
+                            else homeScore = awayScore
+                                MatchService -> MatchService: Add a draw match for each club
+                            end
+                        end
+                    end
+                    group Check league type
+                        MatchService -> MethodUtils: GetLeagueTypeByName(match.League.LeagueType)
+                        activate MethodUtils
+                            MethodUtils --> MatchService: league type
+                        deactivate MethodUtils
+                        alt LeagueType = 'KO'
+                            MatchService -> ParticipateNodeRepository: FindByLeagueId()
+                            activate ParticipateNodeRepository
+                                ParticipateNodeRepository -> SqlServer: executeQuery()
+                                activate SqlServer
+                                    SqlServer --> ParticipateNodeRepository: response
+                                deactivate SqlServer
+                                ParticipateNodeRepository --> MatchService: response(listnode)
+                            deactivate ParticipateNodeRepository
+                            alt League participation doesn't complete
+                                MatchService --> MatchController: return error code
+                            else Knock out match has a draw match
+                                MatchService --> MatchController: return error code
+                            else all condition valid 
+                                MatchService -> MatchService: Find participant node in listnode
+                                note left: node = listNode.FirstOrDefault(n => n.ParticipateId == match.Home.ParentId)
+                                alt node does not exist 
+                                    MatchService --> MatchController: return error code
+                                else node exist
+                                    MatchService -> ParticipateNodeRepository: UpdateAsync(node)
+                                    note left: Update node clubcloneId
+                                    activate ParticipateNodeRepository
+                                        ParticipateNodeRepository -> SqlServer: executeUpdate(node)
+                                        activate SqlServer
+                                            SqlServer --> ParticipateNodeRepository: response
+                                        deactivate SqlServer
+                                        ParticipateNodeRepository --> MatchService: response
+                                    deactivate ParticipateNodeRepository
+                                    alt Update failed
+                                        MatchService --> MatchController: return error code
+                                    end
+                                end
+                            end
+                        else LeagueType ='LEAGUE'
+                            MatchService -> MatchService: break
+                        end 
+                    end
+                    MatchService -> MatchService: Update match stats for home and away club
+                    MatchService -> MatchRepository: UpdateAsync(match)
+                    activate MatchRepository
+                        MatchRepository -> SqlServer: executeUpdate(match)
+                        activate SqlServer
+                            SqlServer --> MatchRepository: response
+                        deactivate SqlServer
+                        MatchRepository --> MatchService: response
+                    deactivate MatchRepository
+                    alt Update success 
+                        MatchService --> MatchController: response
+                    else Update failed
+                        MatchService --> MatchController: return error code
+                    end
+                end
+            deactivate MatchService
+            MatchController --> MatchScheduleScreen: return message
+        deactivate MatchController
+        MatchScheduleScreen --> LeagueManager : Display message
+    deactivate MatchScheduleScreen
+deactivate LeagueManager
+@enduml
