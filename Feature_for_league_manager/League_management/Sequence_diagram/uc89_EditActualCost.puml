@@ -1,0 +1,55 @@
+@startuml Edit Fee Detail 
+actor LeagueManager
+participant EditFeeDetailScreen
+participant FeeController
+participant FeeService
+participant FeeRepository
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> EditFeeDetailScreen: input data
+    activate EditFeeDetailScreen
+        EditFeeDetailScreen -> FeeController: UpdateFee(FeeDetailRequest)
+        activate FeeController
+            FeeController -> FeeService: UpdateFeeDetail(request, UserID)
+            activate FeeService
+                FeeService -> FeeRepository: FindByLeagueFeeId()
+                activate FeeRepository
+                    FeeRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> FeeRepository: response
+                    deactivate SqlServer  
+                FeeRepository --> FeeService: response
+                deactivate FeeRepository
+                alt Fee detail not existed
+                    FeeService --> FeeController: return error code
+                else League not belong to this user
+                    FeeService --> FeeController: return error code
+                else Fee type invalid
+                    FeeService --> FeeController: return error code
+                else fee type is plan fee and league not started 
+                    FeeService --> FeeController: return error code
+                else fee type editable
+                    FeeService --> FeeController: return error code
+                else all valid condition
+                    FeeService -> FeeRepository: UpdateAsync(fee) with fee.Cost = request.Cost
+                    activate FeeRepository
+                        FeeRepository -> SqlServer: executeUpdate(fee)
+                        activate SqlServer
+                            SqlServer --> FeeRepository:  response
+                        deactivate SqlServer
+                        FeeRepository --> FeeService: response
+                    deactivate FeeRepository
+                    alt update success 
+                        FeeService --> FeeController: return success code and response data
+                    else update failed 
+                        FeeService --> FeeController: return error code
+                    end 
+                end
+            deactivate FeeService
+            FeeController --> EditFeeDetailScreen : return response data
+        deactivate FeeController
+        EditFeeDetailScreen --> LeagueManager: return response data
+    deactivate EditFeeDetailScreen
+deactivate LeagueManager
+@enduml
