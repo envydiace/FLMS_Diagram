@@ -1,0 +1,31 @@
+@startuml View Match Squad (Club)
+actor ClubManager #Aquamarine
+participant MatchInfoScreen
+participant SquadController
+participant SquadService
+participant SquadRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> MatchInfoScreen: view match squad
+    activate MatchInfoScreen
+        MatchInfoScreen -> SquadController: GetMatchSquad(matchId)
+        activate SquadController
+            SquadController -> SquadService: GetMatchSquad(matchId)
+            activate SquadService
+                SquadService -> SquadRepository: FindByMatchId()
+                activate SquadRepository
+                    SquadRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> SquadRepository: response
+                    deactivate SqlServer
+                    SquadRepository  --> SquadService: response
+                deactivate SquadRepository
+                SquadService --> SquadController: response
+            deactivate SquadService
+            SquadController --> MatchInfoScreen: data
+        deactivate SquadController
+        MatchInfoScreen --> ClubManager: Display data
+    deactivate MatchInfoScreen
+deactivate ClubManager
+@enduml
