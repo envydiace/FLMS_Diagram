@@ -1,0 +1,69 @@
+@startuml League Setting Type Knock Out 
+actor LeagueManager #Purple
+participant LeagueSettingScreen
+participant ParticipationController
+participant ParticipationService
+participant LeagueRepository
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> LeagueSettingScreen: View league KO setting
+    activate LeagueSettingScreen
+        'TODO: Get league setting tree
+        LeagueSettingScreen -> ParticipationController: ManageLeagueSettingKO(request)
+        activate ParticipationController
+            ParticipationController -> ParticipationService: SaveLeagueTree(request,UserID)
+            activate ParticipationService
+                ParticipationService -> LeagueRepository: FindByLeagueId()
+                note right: request.LeagueId
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> LeagueRepository: response
+                    deactivate SqlServer
+                    LeagueRepository --> ParticipationService: response(league)
+                deactivate LeagueRepository
+                alt League does not exist 
+                    ParticipationService --> ParticipationController: return error code
+                else League does not belong to user 
+                    ParticipationService --> ParticipationController: return error code
+                else League has been started 
+                    ParticipationService --> ParticipationController: return error code
+                else all condition valid
+                    loop node in league list node 
+                        alt Position does not exist 
+                            ParticipationService --> ParticipationController: return error code
+                        else Position exist 
+                            ParticipationService -> ParticipationService: node.ClubClone.ClubId = null
+                        end 
+                    end
+                    loop node in request list node 
+                        alt Position does not exist 
+                            ParticipationService --> ParticipationController: return error code
+                        else Can't add participation to that position
+                            ParticipationService --> ParticipationController: return error code
+                        else all condition valid 
+                            ParticipationService -> ParticipationService: pNode.ClubClone.ClubId = node.ClubId
+                        end
+                    end
+                    ParticipationService -> LeagueRepository: UpdateAsync(league)
+                    activate LeagueRepository
+                        LeagueRepository -> SqlServer: executeUpdate(league)
+                        activate SqlServer
+                            SqlServer --> LeagueRepository: response
+                        deactivate SqlServer
+                        LeagueRepository --> ParticipationService: response
+                    deactivate LeagueRepository
+                    alt Update Success 
+                        ParticipationService --> ParticipationController: return success code
+                    else Update failed
+                        ParticipationService --> ParticipationController: return error code
+                    end  
+                end
+            deactivate ParticipationService
+            ParticipationController --> LeagueSettingScreen: return message
+        deactivate ParticipationController
+        LeagueSettingScreen --> LeagueManager: Display message
+    deactivate LeagueSettingScreen
+deactivate LeagueManager
+@enduml
