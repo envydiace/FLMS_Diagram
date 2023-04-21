@@ -1,0 +1,35 @@
+@startuml Export Schedule
+actor User 
+participant LeagueScheduleScreen
+participant ExportController
+participant ExportService
+participant MatchRepository
+database SqlServer
+
+activate User
+    User -> LeagueScheduleScreen: Click export button
+    activate LeagueScheduleScreen
+        LeagueScheduleScreen -> ExportController:ExporLeagueSchedule(leagueId)
+        activate ExportController
+            ExportController -> ExportService: ExportLeagueSchedule(leagueId)
+            activate ExportService
+                ExportService -> MatchRepository: FindByLeagueId()
+                activate MatchRepository
+                    MatchRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> MatchRepository: response
+                    deactivate SqlServer
+                    MatchRepository -> ExportService:response(listMatches)
+                deactivate MatchRepository
+                ExportService -> ExportService: create new datatable
+                loop each match in list matches
+                    ExportService -> ExportService: add to table
+                end
+                ExportService --> ExportController: data table
+            deactivate ExportService
+            ExportController --> LeagueScheduleScreen: Wordbook (file excel)
+        deactivate ExportController
+        LeagueScheduleScreen --> User: download file excel
+    deactivate LeagueScheduleScreen
+deactivate User
+@enduml
