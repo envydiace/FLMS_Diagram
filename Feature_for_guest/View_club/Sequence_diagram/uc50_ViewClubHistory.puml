@@ -1,0 +1,39 @@
+@startuml View Club History
+actor User 
+participant ClubHistoryScreen
+participant ClubController
+participant ClubService
+participant ParticipateNodeRepository
+participant MatchRepository
+database SqlServer
+
+activate User
+    User -> ClubHistoryScreen: View club history
+    activate ClubHistoryScreen
+        ClubHistoryScreen -> ClubController: GetClubHistory(clubId)
+        activate ClubController
+            ClubController -> ClubService: GetClubHistory(clubId)
+            activate ClubService
+                ClubService -> ParticipateNodeRepository: FindByClubId()
+                activate ParticipateNodeRepository
+                    ParticipateNodeRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ParticipateNodeRepository: response
+                    deactivate SqlServer
+                    ParticipateNodeRepository -> ClubService: response(nodes)
+                deactivate ParticipateNodeRepository
+                ClubService -> ClubService: create a new list match
+                loop each node in nodes 
+                    ClubService -> MatchRepository: FindByHomeIdAndAwayId() with match status is finished
+                    alt Matches existed
+                        ClubService -> ClubService: Add matches to list match
+                    end 
+                end
+                ClubService --> ClubController: return response
+            deactivate ClubService
+            ClubController --> ClubHistoryScreen: return data
+        deactivate ClubController
+        ClubHistoryScreen --> User: Display data
+    deactivate ClubHistoryScreen
+deactivate User 
+@enduml
