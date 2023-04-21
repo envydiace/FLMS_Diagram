@@ -1,0 +1,51 @@
+@startuml View League Statistic TypeKO (Guest)
+actor User
+participant LeagueStatisticScreen
+participant LeagueController
+participant LeagueService
+participant LeagueRepository
+database SqlServer
+
+activate User 
+    User -> LeagueStatisticScreen: View League statistic KO
+    activate LeagueStatisticScreen
+        LeagueStatisticScreen -> LeagueController: GetKnockOutStatistic(leagueId)
+        activate LeagueController
+            LeagueController ->LeagueService: GetLeagueStatisticTypeKO(leagueId)
+            activate LeagueService
+                LeagueService -> LeagueRepository: FindByLeagueId()
+                activate LeagueRepository
+                    LeagueRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> LeagueRepository: response
+                    deactivate SqlServer
+                    LeagueRepository --> LeagueService: response
+                deactivate LeagueRepository
+                alt League does not exist 
+                    LeagueService --> LeagueController: return error code
+                else League Type is not KO 
+                    LeagueService --> LeagueController: return error code
+                else all condition valid
+                    LeagueService -> LeagueService: create new list match node
+                    group take groupNode from league list node
+                        loop each node in groupNode 
+                            LeagueService -> LeagueService: create new node tree
+                            loop each participate in node
+                                LeagueService -> LeagueService: add to node tree
+                            end
+                            LeagueService -> LeagueService: create new match node hold node tree
+                        end
+                        LeagueService -> LeagueService: add match node to list match node
+                    end
+                    group get top event
+                        LeagueService -> LeagueService: GetLeagueTopEvent(leagueId)
+                    end
+                    LeagueService --> LeagueController: response(listmatchnode, topevent)
+                end
+            deactivate LeagueService
+            LeagueController --> LeagueStatisticScreen: data
+        deactivate LeagueController
+        LeagueStatisticScreen --> User: Display data
+    deactivate LeagueStatisticScreen
+deactivate User
+@enduml
