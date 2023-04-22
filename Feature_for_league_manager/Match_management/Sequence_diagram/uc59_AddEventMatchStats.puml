@@ -1,0 +1,80 @@
+@startuml Add Event Match Stats
+actor LeagueManager #Purple
+participant AddMatchEventScreen
+participant EventController
+participant MatchEventService
+participant MatchEventRepository
+participant MethodUtils
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> AddMatchEventScreen: Input match event and click save
+    activate AddMatchEventScreen
+        AddMatchEventScreen -> EventController: AddMatchEvent(request)
+        activate EventController
+            EventController -> MatchEventService: AddEvent(request, UserID)
+            activate MatchEventService
+                MatchEventService -> MatchEventRepository: FindByMatchId()
+                activate MatchEventRepository
+                    MatchEventRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> MatchEventRepository: response
+                    deactivate SqlServer
+                    MatchEventRepository --> MatchEventService: response
+                deactivate MatchEventRepository
+                alt Match not found 
+                    MatchEventService --> EventController: return error code
+                else Match not belong to user 
+                    MatchEventService --> EventController: return error code
+                else Match participation not completed 
+                    MatchEventService --> EventController: return error code
+                else all condition valid 
+                    group check home club or away club 
+                        alt request club id = home club id 
+                            MatchEventService -> MatchEventService: isHome = true
+                        else request club id = away club id 
+                            MatchEventService -> MatchEventService: isHome = false
+                        else request club id != away club id and != home club id 
+                            MatchEventService --> EventController: return error code
+                        end
+                    end
+                    group check request subId and mainId 
+                        alt subId = mainId 
+                            MatchEventService --> EventController: return error code
+                        end
+                    end
+                    group Check event type
+                        MatchEventService -> MethodUtils: GetMatchEventTypeByName(request.EventType)
+                        activate MethodUtils
+                            MethodUtils --> MatchEventService: event type name
+                        deactivate MethodUtils
+                        alt MatchEventType = Goal/YellowCard/RedCard 
+                            MatchEventService -> MatchEventService: checkHome = isHome
+                        else MatchEventType = OwnGoal
+                            MatchEventService -> MatchEventService: checkHome = !isHome
+                        else MatchEventType not found 
+                            MatchEventService --> EventController: return error code
+                        end
+                    end
+                    MatchEventService -> MatchEventService: create new matchEvent with data from request
+                    MatchEventService -> MatchEventRepository: CreateAsync(matchEvent)
+                    activate MatchEventRepository
+                        MatchEventRepository -> SqlServer: executeUpdate(matchEvent)
+                        activate SqlServer
+                            SqlServer --> MatchEventRepository: response
+                        deactivate SqlServer
+                        MatchEventRepository --> MatchEventService: response
+                    deactivate MatchEventRepository
+                    alt Create failed
+                        MatchEventService --> EventController: return error code
+                    else Create success 
+                        MatchEventService --> EventController: return success code
+                    end
+                end
+            deactivate MatchEventService
+        EventController --> AddMatchEventScreen: return message
+        deactivate EventController
+        AddMatchEventScreen --> LeagueManager: Display message
+    deactivate AddMatchEventScreen
+deactivate LeagueManager
+@enduml
