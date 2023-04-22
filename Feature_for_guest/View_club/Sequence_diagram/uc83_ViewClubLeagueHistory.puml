@@ -1,0 +1,31 @@
+@startuml View Club League History
+actor User
+participant ClubLeagueHistoryScreen
+participant ClubController
+participant ClubService
+participant ClubRepository
+database SqlServer
+
+activate User
+    User -> ClubLeagueHistoryScreen: View league joined of that club
+    activate ClubLeagueHistoryScreen
+        ClubLeagueHistoryScreen -> ClubController: GetClubLeagueHistory(clubId)
+        activate ClubController
+            ClubController -> ClubService: GetClubLeagueHistory(clubId)
+            activate ClubService
+                ClubService -> ClubRepository: FindByClubId()
+                activate ClubRepository
+                    ClubRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ClubRepository: response
+                    deactivate SqlServer
+                    ClubRepository --> ClubService: response
+                deactivate ClubRepository
+                ClubService --> ClubController: response
+            deactivate ClubService
+            ClubController ---> ClubLeagueHistoryScreen: data
+        deactivate ClubController
+        ClubLeagueHistoryScreen --> User: display data
+    deactivate ClubLeagueHistoryScreen
+deactivate User
+@enduml
