@@ -1,0 +1,89 @@
+@startuml Registration Mail
+actor ClubManager #Aquamarine
+actor LeagueManager #Purple
+actor MailSystem #red
+participant LeagueInfoScreen
+participant RequestController
+participant ParticipateRequestService
+participant ClubRepository
+participant LeagueRepository
+participant ParticipateRequestRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> LeagueInfoScreen: Click on join button
+    activate LeagueInfoScreen
+        LeagueInfoScreen -> RequestController: SendRegistration(request)
+        activate RequestController
+            RequestController -> ParticipateRequestService: SendJoinRequest(request, UserID, type:register)
+            activate ParticipateRequestService
+                ParticipateRequestService -> ClubRepository: FindByUserIdAndClubId()
+                activate ClubRepository
+                    ClubRepository -> SqlServer : executeQuery()
+                    activate SqlServer
+                        SqlServer --> ClubRepository: response
+                    deactivate SqlServer
+                    ClubRepository --> ParticipateRequestService: response
+                deactivate ClubRepository
+                alt Club not existed
+                    ParticipateRequestService --> RequestController: return error code
+                else Club existed
+                    ParticipateRequestService -> LeagueRepository: FindByLeagueId()
+                    activate LeagueRepository
+                    LeagueRepository -> SqlServer : executeQuery()
+                        activate SqlServer
+                            SqlServer --> LeagueRepository: response
+                        deactivate SqlServer
+                    LeagueRepository --> ParticipateRequestService: response
+                    deactivate LeagueRepository
+                    alt League not exist 
+                        ParticipateRequestService --> RequestController: return error code
+                    else participants more than max participants of the league 
+                        ParticipateRequestService --> RequestController: return error code
+                    else all codition valid 
+                        ParticipateRequestService -> ParticipateRequestRepository: FindByClubIdAndLeagueId()
+                        activate ParticipateRequestRepository
+                        ParticipateRequestRepository -> SqlServer : executeQuery()
+                            activate SqlServer
+                                SqlServer --> ParticipateRequestRepository: response
+                            deactivate SqlServer
+                        ParticipateRequestRepository --> ParticipateRequestService: response
+                        deactivate ParticipateRequestRepository
+                        loop each request in list 
+                            alt request of this club existed
+                                ParticipateRequestService --> RequestController: return error code
+                            else request type is register and status is pending
+                                ParticipateRequestService --> RequestController: return error code
+                            else request type is invite and status is pending
+                                ParticipateRequestService --> RequestController: return error code
+                            end
+                        end
+                        ParticipateRequestService -> ParticipateRequestRepository: CreateAsync(request)
+                        activate ParticipateRequestRepository
+                        ParticipateRequestRepository -> SqlServer : executeUpdate( request)
+                            activate SqlServer
+                                SqlServer --> ParticipateRequestRepository: response
+                            deactivate SqlServer
+                        ParticipateRequestRepository --> ParticipateRequestService: response
+                        deactivate ParticipateRequestRepository
+                        alt Create failed 
+                            ParticipateRequestService --> RequestController: return error code
+                        else Create success 
+                            ParticipateRequestService --> RequestController: return response + mail data
+                        end 
+                    end
+                end
+            deactivate ParticipateRequestService
+            RequestController ->> MailSystem: Invoke send mail
+            activate MailSystem
+                activate LeagueManager
+                MailSystem -> LeagueManager: Send mail inform
+                deactivate LeagueManager
+            deactivate MailSystem
+            RequestController --> LeagueInfoScreen: return message
+        deactivate RequestController
+        LeagueInfoScreen --> ClubManager: return message
+    deactivate LeagueInfoScreen
+deactivate ClubManager
+
+@enduml

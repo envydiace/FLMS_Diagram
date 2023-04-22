@@ -1,0 +1,95 @@
+@startuml Accepted Mail
+actor LeagueManager #Purple
+actor ClubManager #Aquamarine
+actor MailSystem #red
+participant RequestListScreen
+participant RequestController
+participant ParticipateRequestService
+participant ParticipateRequestRepository
+participant ParticipationRepository
+participant UserRepository
+database SqlServer
+
+activate LeagueManager
+    LeagueManager -> RequestListScreen: Click button accept  
+    activate RequestListScreen
+        RequestListScreen -> RequestController: AcceptRegistration(requestId)
+        activate RequestController
+            RequestController -> ParticipateRequestService: ResponseJoinRequest(request, RequestResponse.Accept, UserId)
+            activate ParticipateRequestService
+                ParticipateRequestService -> ParticipateRequestRepository: FindByRequestId()
+                activate ParticipateRequestRepository
+                    ParticipateRequestRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> ParticipateRequestRepository: response
+                    deactivate SqlServer
+                    ParticipateRequestRepository --> ParticipateRequestService: response(request)
+                deactivate ParticipateRequestRepository
+                alt request not exist 
+                    ParticipateRequestService --> RequestController: return error code
+                else request status is not PENDING
+                    ParticipateRequestService --> RequestController: return error code
+                else check user 
+                    ParticipateRequestService -> UserRepository: FindByUserId()
+                    activate UserRepository
+                        UserRepository -> SqlServer: executeQuery()
+                        activate SqlServer
+                            SqlServer --> UserRepository: response
+                        deactivate SqlServer
+                        UserRepository --> ParticipateRequestService: response(user)
+                    deactivate UserRepository
+                    alt User not exist 
+                        ParticipateRequestService --> RequestController: return error code
+                    end
+                end
+                group Check role and user id 
+                    alt Role = 'CLUB_MANAGER' and request.Club.UserId != UserId
+                        ParticipateRequestService --> RequestController: return error code
+                    else Role = 'LEAGUE_MANAGER' and request.League.UserId != UserId
+                        ParticipateRequestService --> RequestController: return error code
+                    end 
+                end
+                group Check request type by request response ACCEPT
+                    alt request type = Registration and user role is CLUB_MANAGER
+                        ParticipateRequestService --> RequestController: return error code
+                    end 
+                    ParticipateRequestService -> ParticipationRepository: FindByLeagueId()
+                    activate ParticipationRepository
+                        ParticipationRepository -> SqlServer: executeQuery()
+                        activate SqlServer
+                            SqlServer --> ParticipationRepository: response
+                        deactivate SqlServer
+                        ParticipationRepository --> ParticipateRequestService: response
+                    deactivate ParticipationRepository
+                    alt League full of participation 
+                        ParticipateRequestService --> RequestController: return error code
+                    end
+                    ParticipateRequestService -> ParticipateRequestService: add new participation to request
+                end 
+                ParticipateRequestService -> ParticipateRequestRepository : UpdateAsync(request)
+                activate ParticipateRequestRepository
+                ParticipateRequestRepository -> SqlServer: executeUpdate(request)
+                    activate SqlServer
+                        SqlServer --> ParticipateRequestRepository: response
+                    deactivate SqlServer
+                ParticipateRequestRepository --> ParticipateRequestService: response(request)
+                deactivate ParticipateRequestRepository
+                alt Update success
+                    ParticipateRequestService -> ParticipateRequestService: HandleSendMail(request.ClubId, request.LeagueId, response, request.RequestType)
+                    ParticipateRequestService --> RequestController: response + maildata
+                else Update failed
+                    ParticipateRequestService --> RequestController: return error code
+                end
+            deactivate ParticipateRequestService
+            RequestController ->> MailSystem: Invoke send mail
+            activate MailSystem
+                activate ClubManager
+                MailSystem -> ClubManager: Send mail inform
+                deactivate ClubManager
+            deactivate MailSystem
+            RequestController --> RequestListScreen: return message
+        deactivate RequestController
+        RequestListScreen --> LeagueManager: Display message
+    deactivate RequestListScreen
+deactivate LeagueManager
+@enduml
