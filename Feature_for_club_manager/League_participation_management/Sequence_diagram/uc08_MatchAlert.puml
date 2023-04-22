@@ -1,2 +1,32 @@
-@startuml sequence
+@startuml MatchAlert
+actor ClubManager #Aquamarine
+actor MailSystem #Red
+participant HangfireJobController
+participant HangfireService
+participant MatchRepository
+database SqlServer
+
+activate HangfireJobController
+    HangfireJobController ->  HangfireService: AnnouceMatchIncoming(mailtype: announce squad)
+    note left: Add a recurring job check\n match for every day at 8AM
+    activate HangfireService
+        HangfireService -> MatchRepository: FindByMatchDate() and match is not finished
+        activate MatchRepository
+            MatchRepository -> SqlServer: executeQuery()
+            activate SqlServer
+                SqlServer --> MatchRepository : response
+            deactivate SqlServer
+            MatchRepository --> HangfireService: response(matches)
+        deactivate MatchRepository
+            loop each match in matches
+                HangfireService -> HangfireService: Create a mail request \n for each club in a match
+                HangfireService ->> MailSystem: Invoke send mail
+                activate MailSystem
+                    activate ClubManager
+                    MailSystem -> ClubManager: send mail
+                    deactivate ClubManager
+                deactivate MailSystem
+            end
+    deactivate HangfireService
+deactivate HangfireJobController
 @enduml
