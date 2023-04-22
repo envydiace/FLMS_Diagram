@@ -9,7 +9,6 @@ database SqlServer
 activate LeagueManager
     LeagueManager -> LeagueSettingScreen: View league KO setting
     activate LeagueSettingScreen
-        'TODO: Get league setting tree
         LeagueSettingScreen -> ParticipationController: ManageLeagueSettingKO(request)
         activate ParticipationController
             ParticipationController -> ParticipationService: SaveLeagueTree(request,UserID)
