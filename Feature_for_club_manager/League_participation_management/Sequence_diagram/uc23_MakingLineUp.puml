@@ -1,0 +1,44 @@
+@startuml UC23 Making line-up for matches
+actor ClubManager #Aquamarine
+participant MakingLineUpScreen
+participant SquadController
+participant SquadService
+participant SquadRepository
+database SqlServer
+
+activate ClubManager
+    ClubManager -> MakingLineUpScreen: Click on "Save" button
+    activate MakingLineUpScreen
+        MakingLineUpScreen -> SquadController: UpdateSquadPosition(request)
+        activate SquadController
+            SquadController -> SquadService: UpdateSquadPosition(request)
+            activate SquadService
+                SquadService -> SquadRepository: FindBySquadId(id)
+                activate SquadRepository
+                    SquadRepository -> SqlServer: executeQuery()
+                    activate SqlServer
+                        SqlServer --> SquadRepository : response
+                    deactivate SqlServer
+                    SquadRepository --> SquadService: response
+                deactivate SquadRepository
+                alt Number of mains not valid 
+                    SquadService --> SquadController: return error code
+                else Number of mains valid
+                    SquadService -> SquadRepository: UpdateAsync(squad)
+                    activate SquadRepository
+                        SquadRepository -> SqlServer: executeUpdate()
+                        activate SqlServer
+                            SqlServer --> SquadRepository: response
+                        deactivate SqlServer
+                        SquadRepository --> SquadService: response
+                    deactivate SquadRepository
+                end
+                SquadService --> SquadController: response
+            deactivate SquadService
+            SquadController --> MakingLineUpScreen: response
+        deactivate SquadController
+        MakingLineUpScreen --> ClubManager: response
+    deactivate MakingLineUpScreen
+deactivate ClubManager
+
+@enduml
