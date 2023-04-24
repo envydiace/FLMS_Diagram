@@ -1,0 +1,80 @@
+@startuml classDiagram
+
+class ParticipationController{
+    +ParticipationController(participationService: ParticipationService)
+    +ConfirmRegistFee(request: ConfirmRegistFeeRequest): ActionResult<ConfirmRegistFeeResponse>
+    +GetClubByLeague(request: ParticipationByLeagueRequest): ActionResult<ParticipationByLeagueResponse>
+    +RemoveJoinedClub(request: RemoveClubRequest): ActionResult<RemoveClubResponse>
+    +GetUnpositionClub(id: int): ActionResult<List<ClubBasicInfoDTO>>
+    +AddParticipationToPosition(clubId: int, clubCloneId: int): ActionResult<AddClubPositionResponse>
+    +GetListJoinedLeague(): ActionResult<List<JoinedLeagueDTO>>
+    +GetLeagueTree(id: int): ActionResult<ParticipateTreeResponse>
+    +ManageLeagueSettingKO(request: SaveLeagueTreeRequest): ActionResult<LeagueSettingResponse>
+}
+ParticipationController x--> ParticipationService: participationService
+
+interface ParticipationService
+
+class ParticipationServiceImpl implements ParticipationService{
+    +ParticipationServiceImpl(participationRepository: ParticipationRepository )
+    +ConfirmResgistFee(request: ConfirmRegistFeeRequest, userId: int): ConfirmRegistFeeResponse
+    +GetParticipationByLeague(request: ParticipationByLeagueRequest): ParticipationByLeagueResponse
+    +RemoveJoinedTeam(request: RemoveClubRequest, UserId: int): RemoveClubResponse
+    +ListUnpositionClub(leagueId: int, userId: int): List<ClubBasicInfoDTO>
+    +AddClubPosition(clubCloneId: int, clubId: int, userId: int): AddClubPositionResponse
+    +GetListJoinedLeague(userId: int): List<JoinedLeagueDTO>
+    +GetLeagueParticipateTree(leagueId: int): ParticipateTreeResponse
+    +SaveLeagueTree(request: SaveLeagueTreeRequest, userId: int): LeagueSettingResponse
+}
+
+ParticipationServiceImpl x--> ParticipationRepository: participationRepository
+ParticipationServiceImpl x--> MethodUtils
+
+interface BaseRepository<T>
+
+class BaseRepositoryImpl<T> {
+  +BaseRepositoryImpl(dbContext: FLMS_DBContext)
+  +FindAll(): IQueryable<T>
+  +FindByCondition(expression: Expression<Func<T, bool>>):IQueryable<T>
+  +CreateAsync(entity: T): bool
+  +UpdateAsync(entity: T): T
+  +DeleteAsync(entity: T): T
+}
+BaseRepositoryImpl ..|> BaseRepository 
+
+interface ParticipationRepository<Participation> implements BaseRepository
+ParticipationRepository --o Participation
+
+class ParticipationRepositoryImpl implements ParticipationRepository
+
+class Participation{
+    +ParticipationId int
+    +LeagueId int
+    +ClubId int
+    +Confirmed bool
+    +Evidence string 
+    +JoinDate DateTime 
+}
+
+class MethodUtils{
+  +CheckLeagueType(type: string): bool
+  +CheckUserRole(role: string): bool
+  +GetLeagueTypeByName(name: string): Constants.LeagueType?
+  +GetMatchEventTypeByName(name: string): Constants.MatchEventType?
+  +CheckFeeType(feeType: string): bool
+  +CheckEditableFeeKey(feeKey: string): bool
+  +CountNumberOfRound(type: string, NumberOfParticipate: int): int
+  +GetKoRoot(numberOfParticipate: int): ParticipateNodeDTO
+  +GetKoListBFS(root: ParticipateNodeDTO): List<ParticipateNodeDTO>
+  +GetKoList(numberOfParticipate: int): List<ParticipateNodeDTO>
+  +GetListMatches(ListTeam: List<string>): string[][]
+  +GenerateMatchSquad(NoPlayerInSquad: int, MaxPlayerInTeam: int): int
+  +GetLeagueKoRound(deep: int): string?
+  +CountLeagueDateRange(type: string, numberOfParticipation: int): int
+  +SumTotalLeagueFee(leagueFees: List<LeagueFeeDTO>): decimal
+  +GetPlayerNumber(squadPosition: SquadPosition): int
+  +GetNodeScore(node: ParticipateNode): int
+  +SetColumnWidths(worksheet: IXLWorksheet): void
+}
+
+@enduml
