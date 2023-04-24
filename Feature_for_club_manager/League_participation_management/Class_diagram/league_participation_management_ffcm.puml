@@ -1,6 +1,6 @@
 @startuml Feature for club manager - league participation management 
 
-skinparam classFontSize 20
+skinparam classFontSize 15
 
 class Club{
     +ClubId int
@@ -132,5 +132,116 @@ interface LeagueRepository<League> implements BaseRepository
 LeagueRepository --o League
 
 class LeagueRepositoryImpl implements LeagueRepository
+
+class ParticipationController{
+    +ParticipationController(participationService: ParticipationService)
+    +ConfirmRegistFee(request: ConfirmRegistFeeRequest): ActionResult<ConfirmRegistFeeResponse>
+    +GetClubByLeague(request: ParticipationByLeagueRequest): ActionResult<ParticipationByLeagueResponse>
+    +RemoveJoinedClub(request: RemoveClubRequest): ActionResult<RemoveClubResponse>
+    +GetUnpositionClub(id: int): ActionResult<List<ClubBasicInfoDTO>>
+    +AddParticipationToPosition(clubId: int, clubCloneId: int): ActionResult<AddClubPositionResponse>
+    +GetListJoinedLeague(): ActionResult<List<JoinedLeagueDTO>>
+    +GetLeagueTree(id: int): ActionResult<ParticipateTreeResponse>
+    +ManageLeagueSettingKO(request: SaveLeagueTreeRequest): ActionResult<LeagueSettingResponse>
+}
+ParticipationController x--> ParticipationService: participationService
+
+interface ParticipationService
+
+class ParticipationServiceImpl implements ParticipationService{
+    +ParticipationServiceImpl(participationRepository: ParticipationRepository )
+    +ConfirmResgistFee(request: ConfirmRegistFeeRequest, userId: int): ConfirmRegistFeeResponse
+    +GetParticipationByLeague(request: ParticipationByLeagueRequest): ParticipationByLeagueResponse
+    +RemoveJoinedTeam(request: RemoveClubRequest, UserId: int): RemoveClubResponse
+    +ListUnpositionClub(leagueId: int, userId: int): List<ClubBasicInfoDTO>
+    +AddClubPosition(clubCloneId: int, clubId: int, userId: int): AddClubPositionResponse
+    +GetListJoinedLeague(userId: int): List<JoinedLeagueDTO>
+    +GetLeagueParticipateTree(leagueId: int): ParticipateTreeResponse
+    +SaveLeagueTree(request: SaveLeagueTreeRequest, userId: int): LeagueSettingResponse
+}
+
+ParticipationServiceImpl x--> ParticipationRepository: participationRepository
+ParticipationServiceImpl x--> MethodUtils
+
+interface ParticipationRepository<Participation> implements BaseRepository
+ParticipationRepository --o Participation
+
+class ParticipationRepositoryImpl implements ParticipationRepository
+
+class Participation{
+    +ParticipationId int
+    +LeagueId int
+    +ClubId int
+    +Confirmed bool
+    +Evidence string 
+    +JoinDate DateTime 
+}
+
+class MethodUtils{
+  +CheckLeagueType(type: string): bool
+  +CheckUserRole(role: string): bool
+  +GetLeagueTypeByName(name: string): Constants.LeagueType?
+  +GetMatchEventTypeByName(name: string): Constants.MatchEventType?
+  +CheckFeeType(feeType: string): bool
+  +CheckEditableFeeKey(feeKey: string): bool
+  +CountNumberOfRound(type: string, NumberOfParticipate: int): int
+  +GetKoRoot(numberOfParticipate: int): ParticipateNodeDTO
+  +GetKoListBFS(root: ParticipateNodeDTO): List<ParticipateNodeDTO>
+  +GetKoList(numberOfParticipate: int): List<ParticipateNodeDTO>
+  +GetListMatches(ListTeam: List<string>): string[][]
+  +GenerateMatchSquad(NoPlayerInSquad: int, MaxPlayerInTeam: int): int
+  +GetLeagueKoRound(deep: int): string?
+  +CountLeagueDateRange(type: string, numberOfParticipation: int): int
+  +SumTotalLeagueFee(leagueFees: List<LeagueFeeDTO>): decimal
+  +GetPlayerNumber(squadPosition: SquadPosition): int
+  +GetNodeScore(node: ParticipateNode): int
+  +SetColumnWidths(worksheet: IXLWorksheet): void
+}
+
+class SquadController{
+    +SquadController(squadService: SquadService)
+    +GetMatchSquad(matchId: int): ActionResult<MatchSquadResponse>
+    +GetSquad(squadId: int): ActionResult<MatchSquadResponse>
+    +GetSquadInMatch(request: 
+    SquadInMatchRequest): ActionResult<MatchSquadResponse>
+    +GetUnsquadPlayers(squadId: int): ActionResult<List<PlayerSquadPositionDTO>>
+    +AddPlayerToPosition(request: 
+    AddPositionRequest): ActionResult<AddPositionResponse>
+    +RemovePlayerFromPosition(positionId: 
+    int): ActionResult<RemovePositionResponse>
+    +GetPlayerJoinedMatch(matchId: int): ActionResult<List<PlayerSquadPositionDTO>
+    +UpdateSquadPosition(request: 
+    UpdateSquadPositionRequest): ActionResult<UpdateSquadResponse>
+    +GetSquadByManager(squadId: int): ActionResult<ManagerSquadResponse>
+    +GetListPlayerJoinMatch(request: 
+    ListPlayerJoinMatchRequest): ActionResult<List<PlayerSquadPositionDTO>>
+}
+SquadController x--> SquadService: squadService
+
+interface SquadService
+
+class SquadServiceImpl implements SquadService{
+    +SquadServiceImpl(squadRepository: SquadRepository, squadPositionRepository: 
+    SquadPositionRepository, playerRepository: PlayerRepository)
+    +GetMatchSquad(matchId: int): MatchSquadResponse
+    +GetSquadById(squadId: int): SquadResponse
+    +GetSquadInMatch(request: SquadInMatchRequest): SquadResponse
+    +GetUnsquadPlayer(squadId: int): List<PlayerSquadPositionDTO>
+    +GetMatchPlayers(matchId: int): List<PlayerSquadPositionDTO>
+    +GetPlayerForEvent(request: PlayerForEventRequest): List<PlayerSquadPositionDTO>
+    +AddSquadPosition(request: AddPositionRequest, userId: int): AddPositionResponse
+    +RemoveSquadPosition(squadPositionId: int, userId: int): RemovePositionResponse
+    +UpdateSquadPosition(request: UpdateSquadPositionRequest, 
+    userId: int): UpdateSquadResponse
+    +GetSquadByManager(squadId: int, userId: int): ManagerSquadResponse
+    +GetListPlayerJoinMatch(request: ListPlayerJoinMatchRequest): List<PlayerSquadPositionDTO>
+} 
+
+SquadServiceImpl x--> SquadRepository: squadRepository
+
+interface SquadRepository<Squad> implements BaseRepository
+SquadRepository --o Squad
+
+class SquadRepositoryImpl implements SquadRepository
 
 @enduml

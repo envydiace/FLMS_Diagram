@@ -52,6 +52,16 @@ class Match{
     +Stadium string
 }
 
+class MatchEvent{
+    +MatchEventId int
+    +MainId int
+    +SubId int
+    +MatchId int
+    +EventType string
+    +EventTime int
+    +IsHome bool
+}
+
 class LeagueController{
     +LeagueController(leagueService: LeagueService)
     +CreateLeague(request: 
@@ -87,8 +97,10 @@ class LeagueServiceImpl implements LeagueService{
     +GetListLeagueByUser(userId: int): List<LeagueByUserDTO>
     +GetLeagueTopEvent(leagueId: int): TopEventResponse
     +GetLeagueTopPrize(size: int): TopLeaguePrizeResponse
-    +GetLeagueStatisticTypeLeague(leagueId: int): LeagueLeagueStatisticResponse
-    +GetLeagueStatisticTypeKO(leagueId: int): LeagueKnockOutStatisticResponse
+    +GetLeagueStatisticTypeLeague(leagueId: 
+    int): LeagueLeagueStatisticResponse
+    +GetLeagueStatisticTypeKO(leagueId: 
+    int): LeagueKnockOutStatisticResponse
     +DeleteLeague(leagueId: int, userId: int): DeleteLeagueResponse
     +GetLeagueUpdateInfo(leagueId: int): LeagueUpdateInfoResponse
     +UpdateLeagueInfo(request: LeagueUpdateInfoRequest, 
@@ -111,6 +123,9 @@ class MatchController{
     +FinishMatch(id: int): ActionResult<FinishMatchResponse>
     +UpdateMatch(request: 
     UpdateMatchInfoRequest): ActionResult<UpdateMatchInfoResponse>
+    +ExporLeagueSchedule(LeagueId: int): IActionResult
+    +ExportLeagueSchedule(LeagueId: int): DataTable
+    +GetMatchEvent(matchId: int): List<MatchEventDTO>
 }
 
 MatchController x--> MatchService: matchService
@@ -127,6 +142,7 @@ class MatchServiceImpl implements MatchService{
     +FinishMatch(matchId: int, userId: int): FinishMatchResponse
     +UpdateMatchInfo(request: UpdateMatchInfoRequest, 
     UserId: int): UpdateMatchInfoResponse
+    +GetMatchEvent(matchId: int): List<MatchEventDTO>
 }
 MatchServiceImpl x--> MatchRepository: matchRepository
 MatchServiceImpl x--> MatchEventRepository: meRepository
@@ -135,6 +151,11 @@ interface MatchRepository<Match> implements BaseRepository
 MatchRepository --o Match
 
 class MatchRepositoryImpl implements MatchRepository
+
+interface MatchEventRepository<MatchEvent> implements BaseRepository
+MatchEventRepository --o MatchEvent
+
+class MatchEventRepositoryImpl implements MatchEventRepository
 
 class MatchStatisticController{
     +MatchStatisticController(matchStatisticService: 
@@ -165,12 +186,18 @@ class MatchStatisticRepositoryImpl implements MatchStatisticRepository
 
 class FeeController{
     +FeeController(feeService: FeeService)
-    +GetLeagueFees(LeagueId: int): ActionResult<LeagueFeeResponse>
-    +GetFeeDetail(LeagueFeeId: int): ActionResult<FeeDetailResponse>
-    +UpdateFee(request: FeeDetailRequest): ActionResult<FeeDetailResponse>
-    +GetLeagueClubFees(leagueId: int, clubId: int): ActionResult<LeagueFeeClubResponse>
-    +AddLeagueFee(request: AddLeagueFeeRequest): ActionResult<AddLeagueFeeResponse>
-    +DeleteLeagueFee(LeagueFeeId: int): ActionResult<DeleteLeagueFeeResponse>
+    +GetLeagueFees(LeagueId: 
+    int): ActionResult<LeagueFeeResponse>
+    +GetFeeDetail(LeagueFeeId: 
+    int): ActionResult<FeeDetailResponse>
+    +UpdateFee(request: 
+    FeeDetailRequest): ActionResult<FeeDetailResponse>
+    +GetLeagueClubFees(leagueId: int, 
+    clubId: int): ActionResult<LeagueFeeClubResponse>
+    +AddLeagueFee(request: 
+    AddLeagueFeeRequest): ActionResult<AddLeagueFeeResponse>
+    +DeleteLeagueFee(LeagueFeeId: 
+    int): ActionResult<DeleteLeagueFeeResponse>
 }
 FeeController x--> FeeService: feeService
 
