@@ -1,6 +1,6 @@
 @startuml Common feature for logged user 
 
-skinparam classFontSize 20
+skinparam classFontSize 30
 
 class User {
   +UserId: int
@@ -18,9 +18,10 @@ class User {
   +TokenExpire:	DateTime
 }
 
-' class PasswordHelper {
-'   +HashUsingPbkdf2(password: string, salt: byte[]): string
-' }
+class PasswordHelper {
+  +HashUsingPbkdf2(password: string, salt: byte[]): string
+  +GetSecureSalt(): byte[] 
+}
 
 class MethodUtils{
   +CheckLeagueType(type: string): bool
@@ -56,13 +57,21 @@ class UserController {
 }
 UserController x--> UserService: userService
 
+interface TokenService
+
+class TokenServiceImpl implements TokenService{
+  +TokenServiceImpl(UserRepository userRepository, TokenRepository 
+  tokenRepository, tokenHelper: TokenHelper)
+  +GenerateTokensAsync(userId: int): TokenResponse
+}
+
 interface UserService
 
 class UserServiceImpl implements UserService {
   +UserServiceImpl(userRepository: UserRepository,tokenRepository: TokenRepository, 
   tokenService: TokenService, tokenHelper: TokenHelper, configuration: IConfiguration)
   +CheckSignUp(signupRequest: SignupRequest): SignupResponse
-  +LoginAsync(LoginRequest loginRequest):TokenResponse
+  +LoginAsync(loginRequest: LoginRequest):TokenResponse
   +LogoutAsync(userId: int): LogoutResponse
   +GetUserProfile(userId: int): UserProfileResponse
   +ChangePass(changePasswordRequest: ChangePasswordRequest, UserId: int): ChangePasswordResponse
@@ -70,10 +79,11 @@ class UserServiceImpl implements UserService {
   +ForgotPassword(email: string): ForgotPassResponse
   +ChangeNewPass(request: ChangeNewPassRequest): ChangeNewPassResponse
 }
-UserServiceImpl x--> UserRepository: userRepository
-' UserServiceImpl x--> PasswordHelper
+UserServiceImpl x--> UserRepository
+UserServiceImpl x--> PasswordHelper
 UserServiceImpl x--> MethodUtils
 UserServiceImpl x--> TokenHelper: tokenHelper
+UserServiceImpl x--> TokenService
 
 interface BaseRepository<T>
 

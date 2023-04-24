@@ -1,0 +1,99 @@
+@startuml classDiagram
+
+class RequestController{
+    +RequestController(participateRequestService: ParticipateRequestService, mailService: IMailService)
+    +SendInvitation(request: JoinRequest): ActionResult<JoinResponse>
+    +SendRegistration(request: JoinRequest): ActionResult<JoinResponse>
+    +RequestListFilter(request: ListRequestFilterRequest): ActionResult<RequestListResponse>
+    +AcceptInvitation(requestId: int): ActionResult<RequestListResponse>
+    +RejectInvitation(requestId: int): ActionResult<RequestListResponse>
+    +CancelRegistration(requestId: int): ActionResult<RequestListResponse>
+    +AcceptRegistration(requestId: int): ActionResult<RequestListResponse>
+    +RejectRegistration(requestId: int): ActionResult<RequestListResponse>
+    +CancelInvitation(requestId: int): ActionResult<RequestListResponse>
+}
+RequestController x--> ParticipateRequestService: participateRequestService
+interface ParticipateRequestService
+
+class ParticipateRequestServiceImpl implements ParticipateRequestService{
+    +ParticipateRequestServiceImpl(participateRequestRepository: ParticipateRequestRepository, 
+    leagueRepository: LeagueRepository, 
+    userRepository: UserRepository, clubRepository: ClubRepository, 
+    participationRepository: ParticipationRepository)
+    +SendJoinRequest(request: JoinRequest, UserId: int, type: Constants.RequestType): JoinResponse
+    +GetRequestList(request: ListRequestFilterRequest, userId: int): RequestListResponse
+    +ResponseJoinRequest(requestId: int, response: Constants.RequestResponse, 
+    userId: int): ResponseRequestResponse
+    +HandleSendMail(clubId: int, leagueId: int, response: Constants.RequestResponse, 
+    requestType: string): MailDTO
+}
+ParticipateRequestServiceImpl x--> ClubRepository: clubRepository
+ParticipateRequestServiceImpl x--> ParticipateRequestRepository: participateRequestRepository
+ParticipateRequestServiceImpl x--> LeagueRepository: leagueRepository
+
+interface ClubRepository<Club> implements BaseRepository
+ClubRepository --o Club
+
+interface ParticipateRequestRepository<ParticipateRequest> implements BaseRepository
+ParticipateRequestRepository --o ParticipateRequest
+class ParticipateRequestRepositoryImpl implements ParticipateRequestRepository
+
+class ParticipateRequest {
+  +RequestId: int
+  +LeagueId: int
+  +ClubId: int
+  +RequestType: string
+  +RequestStatus: string
+  +RequestDate: DateTime
+}
+
+class Club{
+    +ClubId int
+    +UserId int
+    +ClubName string
+    +Email string
+    +PhoneNumber string
+    +CreateAt DateTime
+    +Logo string
+    +FanPage string
+}
+
+class ClubRepositoryImpl implements ClubRepository
+
+interface LeagueRepository<League> implements BaseRepository
+LeagueRepository --o League
+
+class LeagueRepositoryImpl implements LeagueRepository
+class League{
+    +LeagueId int
+    +UserId int
+    +LeagueName string
+    +NoParticipate int
+    +StartDate DateTime
+    +EndDate DateTime
+    +MaxNoPlayer int
+    +NoPlayerSquad int
+    +Location string
+    +Fanpage string
+    +CreateAt DateTime
+    +Description string
+    +LeagueType string
+    +NoRound int
+    +Logo string
+    +IsFinished bool
+}
+
+interface BaseRepository<T>
+
+class BaseRepositoryImpl<T> {
+  +BaseRepositoryImpl(dbContext: FLMS_DBContext)
+  +FindAll(): IQueryable<T>
+  +FindByCondition(expression: Expression<Func<T, bool>>):IQueryable<T>
+  +CreateAsync(entity: T): bool
+  +UpdateAsync(entity: T): T
+  +DeleteAsync(entity: T): T
+}
+BaseRepositoryImpl ..|> BaseRepository 
+
+
+@enduml
