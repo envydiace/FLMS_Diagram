@@ -2,6 +2,17 @@
 
 skinparam classFontSize 15
 
+class Match{
+    +MatchId int
+    +LeagueId int
+    +HomeId int
+    +AwayId int
+    +MatchDate DateTime
+    +IsFinish bool
+    +Round string
+    +Stadium string
+}
+
 class Club{
     +ClubId int
     +UserId int
@@ -125,8 +136,10 @@ class LeagueServiceImpl implements LeagueService{
     +DeleteLeague(leagueId: int, userId: int): DeleteLeagueResponse
     +GetLeagueUpdateInfo(leagueId: int): LeagueUpdateInfoResponse
     +UpdateLeagueInfo(request: LeagueUpdateInfoRequest, UserId: int): LeagueUpdateInfoResponse
+    +AnnouceMatchIncoming(Type: string): Task
 }
 LeagueServiceImpl x--> LeagueRepository: leagueRepository
+LeagueServiceImpl x--> MatchRepository: matchRepository
 
 interface LeagueRepository<League> implements BaseRepository
 LeagueRepository --o League
@@ -135,33 +148,42 @@ class LeagueRepositoryImpl implements LeagueRepository
 
 class ParticipationController{
     +ParticipationController(participationService: ParticipationService)
-    +ConfirmRegistFee(request: ConfirmRegistFeeRequest): ActionResult<ConfirmRegistFeeResponse>
-    +GetClubByLeague(request: ParticipationByLeagueRequest): ActionResult<ParticipationByLeagueResponse>
-    +RemoveJoinedClub(request: RemoveClubRequest): ActionResult<RemoveClubResponse>
+    +ConfirmRegistFee(request: 
+    ConfirmRegistFeeRequest): ActionResult<ConfirmRegistFeeResponse>
+    +GetClubByLeague(request: 
+    ParticipationByLeagueRequest): ActionResult<ParticipationByLeagueResponse>
+    +RemoveJoinedClub(request: 
+    RemoveClubRequest): ActionResult<RemoveClubResponse>
     +GetUnpositionClub(id: int): ActionResult<List<ClubBasicInfoDTO>>
-    +AddParticipationToPosition(clubId: int, clubCloneId: int): ActionResult<AddClubPositionResponse>
+    +AddParticipationToPosition(clubId: int, 
+    clubCloneId: int): ActionResult<AddClubPositionResponse>
     +GetListJoinedLeague(): ActionResult<List<JoinedLeagueDTO>>
     +GetLeagueTree(id: int): ActionResult<ParticipateTreeResponse>
-    +ManageLeagueSettingKO(request: SaveLeagueTreeRequest): ActionResult<LeagueSettingResponse>
+    +ManageLeagueSettingKO(request: 
+    SaveLeagueTreeRequest): ActionResult<LeagueSettingResponse>
 }
 ParticipationController x--> ParticipationService: participationService
 
 interface ParticipationService
 
 class ParticipationServiceImpl implements ParticipationService{
-    +ParticipationServiceImpl(participationRepository: ParticipationRepository )
-    +ConfirmResgistFee(request: ConfirmRegistFeeRequest, userId: int): ConfirmRegistFeeResponse
-    +GetParticipationByLeague(request: ParticipationByLeagueRequest): ParticipationByLeagueResponse
+    +ParticipationServiceImpl(participationRepository: 
+    ParticipationRepository )
+    +ConfirmResgistFee(request: ConfirmRegistFeeRequest, 
+    userId: int): ConfirmRegistFeeResponse
+    +GetParticipationByLeague(request: 
+    ParticipationByLeagueRequest): ParticipationByLeagueResponse
     +RemoveJoinedTeam(request: RemoveClubRequest, UserId: int): RemoveClubResponse
     +ListUnpositionClub(leagueId: int, userId: int): List<ClubBasicInfoDTO>
-    +AddClubPosition(clubCloneId: int, clubId: int, userId: int): AddClubPositionResponse
+    +AddClubPosition(clubCloneId: int, clubId: int, 
+    userId: int): AddClubPositionResponse
     +GetListJoinedLeague(userId: int): List<JoinedLeagueDTO>
     +GetLeagueParticipateTree(leagueId: int): ParticipateTreeResponse
-    +SaveLeagueTree(request: SaveLeagueTreeRequest, userId: int): LeagueSettingResponse
+    +SaveLeagueTree(request: SaveLeagueTreeRequest, 
+    userId: int): LeagueSettingResponse
 }
 
 ParticipationServiceImpl x--> ParticipationRepository: participationRepository
-ParticipationServiceImpl x--> MethodUtils
 
 interface ParticipationRepository<Participation> implements BaseRepository
 ParticipationRepository --o Participation
@@ -175,27 +197,6 @@ class Participation{
     +Confirmed bool
     +Evidence string 
     +JoinDate DateTime 
-}
-
-class MethodUtils{
-  +CheckLeagueType(type: string): bool
-  +CheckUserRole(role: string): bool
-  +GetLeagueTypeByName(name: string): Constants.LeagueType?
-  +GetMatchEventTypeByName(name: string): Constants.MatchEventType?
-  +CheckFeeType(feeType: string): bool
-  +CheckEditableFeeKey(feeKey: string): bool
-  +CountNumberOfRound(type: string, NumberOfParticipate: int): int
-  +GetKoRoot(numberOfParticipate: int): ParticipateNodeDTO
-  +GetKoListBFS(root: ParticipateNodeDTO): List<ParticipateNodeDTO>
-  +GetKoList(numberOfParticipate: int): List<ParticipateNodeDTO>
-  +GetListMatches(ListTeam: List<string>): string[][]
-  +GenerateMatchSquad(NoPlayerInSquad: int, MaxPlayerInTeam: int): int
-  +GetLeagueKoRound(deep: int): string?
-  +CountLeagueDateRange(type: string, numberOfParticipation: int): int
-  +SumTotalLeagueFee(leagueFees: List<LeagueFeeDTO>): decimal
-  +GetPlayerNumber(squadPosition: SquadPosition): int
-  +GetNodeScore(node: ParticipateNode): int
-  +SetColumnWidths(worksheet: IXLWorksheet): void
 }
 
 class SquadController{
@@ -239,9 +240,11 @@ class SquadServiceImpl implements SquadService{
 
 SquadServiceImpl x--> SquadRepository: squadRepository
 
-interface SquadRepository<Squad> implements BaseRepository
-SquadRepository --o Squad
-
 class SquadRepositoryImpl implements SquadRepository
+
+interface MatchRepository<Match> implements BaseRepository
+MatchRepository --o Match
+
+class MatchRepositoryImpl implements MatchRepository
 
 @enduml
